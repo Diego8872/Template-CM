@@ -487,3 +487,16 @@ if st.session_state.get('procesado'):
         mime="application/zip",
         use_container_width=True
     )
+
+    # Template unificado
+    todas_las_filas = []
+    for filas in resultados.values():
+        todas_las_filas.extend(filas)
+    b_unificado = generar_excel_bytes(todas_las_filas)
+    st.download_button(
+        label=f"📊 DESCARGAR TEMPLATE UNIFICADO — Operación {nro}",
+        data=b_unificado,
+        file_name=f"TEMPLATE_UNIFICADO_{nro}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
+    )
