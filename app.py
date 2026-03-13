@@ -17,7 +17,8 @@ st.markdown("""
         background-color: #0e1117;
         color: #fafafa;
     }
-    .block-container { padding-top: 2rem; }
+    .block-container { padding-top: 1rem; }
+    h1 { color: #00b4d8 !important; font-size: 1.8rem !important; }
 
     .titulo-app {
         font-size: 2rem; font-weight: 700;
@@ -354,7 +355,7 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
 
 
 # ── UI ────────────────────────────────────────────────────────────────────────
-st.markdown('<p class="titulo-app">📋 Template CM</p>', unsafe_allow_html=True)
+st.title("📋 Template CM")
 st.markdown('<p class="subtitulo-app">INTERLOG Comercio Exterior — Generación automática de planillas de clasificación de mercadería</p>', unsafe_allow_html=True)
 st.markdown("---")
 
