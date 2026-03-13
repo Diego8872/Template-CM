@@ -84,6 +84,13 @@ st.markdown("""
         border-radius: 8px !important;
         padding: 8px !important;
     }
+    div[data-testid="stFileUploader"] label p {
+        color: #00b4d8 !important;
+        font-weight: 500 !important;
+    }
+    div[data-testid="stFileUploader"] small {
+        color: #8899aa !important;
+    }
     .stSelectbox > div > div {
         background: #161b22 !important;
         border: 1px solid #1e3a4a !important;
@@ -351,7 +358,7 @@ st.markdown('<p class="titulo-app">📋 Template CM</p>', unsafe_allow_html=True
 st.markdown('<p class="subtitulo-app">INTERLOG Comercio Exterior — Generación automática de planillas de clasificación de mercadería</p>', unsafe_allow_html=True)
 st.markdown("---")
 
-col_main, col_config = st.columns([3, 1])
+col_main, col_config = st.columns([2.5, 1])
 
 with col_main:
     st.markdown('<p class="seccion-titulo">📂 Archivos de la operación</p>', unsafe_allow_html=True)
