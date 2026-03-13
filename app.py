@@ -17,7 +17,7 @@ st.markdown("""
         background-color: #0e1117;
         color: #fafafa;
     }
-    .block-container { padding-top: 1rem; }
+    .block-container { padding-top: 3rem; }
     h1 { color: #00b4d8 !important; font-size: 1.8rem !important; }
 
     .titulo-app {
