@@ -18,12 +18,15 @@ st.markdown("""
     .badge-ok { background: #0d2e1a; color: #3dd68c; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid #3dd68c; display: inline-block; margin: 3px 2px; }
     .badge-err { background: #2e0d0d; color: #ff6b6b; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid #ff6b6b; display: inline-block; margin: 3px 2px; }
     .badge-fixed { background: #1a2a1a; color: #90ee90; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid #90ee90; display: inline-block; margin: 3px 2px; }
-    .excluido-box { background: #1a1000; border: 1px solid #f0c040; border-radius: 8px; padding: 12px 16px; margin: 4px 0; font-size: 0.85rem; }
+    .excluido-box { background: #1a1000; border: 1px solid #f0c040; border-radius: 8px; padding: 12px 16px; margin: 4px 0; font-size: 0.85rem; color: #ffd980; }
     .excluido-title { color: #f0c040; font-weight: 600; margin-bottom: 8px; }
     .no-genera-box { background: #2e0d0d; border: 1px solid #ff6b6b; border-radius: 8px; padding: 12px 16px; margin: 4px 0; font-size: 0.85rem; color: #ff6b6b; }
     .alerta-descarte { background: #2a1f00; border: 1px solid #f0c040; border-radius: 8px; padding: 12px 16px; color: #f0c040; font-size: 0.88rem; margin: 6px 0; }
     .stButton > button { background: linear-gradient(135deg, #00b4d8, #0077b6) !important; color: white !important; font-weight: 600 !important; border: none !important; border-radius: 8px !important; }
     div[data-testid="stFileUploader"] label p { color: #00b4d8 !important; font-weight: 500 !important; }
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -115,7 +118,34 @@ def generar_excel_bytes(filas):
     ws.freeze_panes = 'A2'
     buf = io.BytesIO(); wb.save(buf); buf.seek(0); return buf.getvalue()
 
-def construir_filas(grupo_items, inv, rs, cuit_val, cond_merca):
+def construir_filas_excluidos(excluidos, inv, rs, cuit_val, cond_merca):
+    """Construye filas para ítems excluidos — solo para el template unificado."""
+    filas = []
+    for f in excluidos:
+        p = f['proy']
+        filas.append({
+            'ID': 0, 'InscRUMP': str(rs['InscRUMP']), 'ActiServ': str(rs['ActiServ']),
+            'NroInsc': str(rs['NroInsc']), 'RazonSocial': str(rs['RazonSocial']),
+            'CUIT': cuit_val, 'ImpDirecta': str(rs['ImpDirecta']), 'CondMerca': cond_merca,
+            'AnioFabricacion': None, 'RazonSocialLeasing': None, 'CuitLeasing': None, 'SimiSira': None,
+            'ValorFOBTotal': f['fob_final'],
+            'ProyectoMinero': str(p.get('ProyectoMinero', '')).upper() if p else '',
+            'Radicacion': str(p.get('Radicacion', '')).upper() if p else '',
+            'DetalleTransitorioDeposito': str(p.get('DetalleTransitorioDeposito', '')) if p else '',
+            'ClasificacionDeArticulo': str(rs['ClasificacionDeArticulo']),
+            'TipoDeFactura': 'DEFINITIVA', 'NumeroDeFactura': inv, 'OrdenDeCompra': None,
+            'Descripcion': f['descripcion'], 'Cantidad': f['qty_int'], 'UnidadMedida': f['unidad'],
+            'PosicionArancelaria': f['ncm'], 'Marca': None, 'Modelo': None,
+            'NroDeSerie': None, 'ValorUnitario': f['valor_unit'], 'ValorTotalItem': f['valor_total'],
+            'SerieDelMotor': None, 'MarcaDelMotor': None, 'ModeloMotor': None,
+            'TipoPlantaDestino': None, 'FinalidadDeUso': None,
+            'CodigoParte': f['pn'], 'TipoDeMaquina': f['tipo_maq'],
+            'MarcaMaquina': f['marca_maq'], 'ModeloMaquina': f['modelo_maq'],
+            'Expedientes Escalonados': None, 'Proveedor': None,
+            'PaisOrigenDeLaMercaderia': f['origen'], 'Observaciones': 'SIN CM',
+            'ITEM_DESPACHO': f['item_di'],
+        })
+    return filas
     valor_fob_total = round(sum(i['fob_final'] for i in grupo_items if i['fob_final']), 2)
     filas = []
     for f in grupo_items:
@@ -209,13 +239,14 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
             sub_row, item_di, estado = match_subitem(pn, qty_str, fob_calc, df_sub, usados_global)
 
             fob_final = ncm = valor_unit = valor_total = None
-            unidad = 'UNIDAD'; ncm10 = ''; pct_der = 0.0
+            unidad = 'UNIDAD'; ncm10 = ''; pct_der = 0.0; pn_di = pn
 
             if sub_row is not None:
                 fob_final = round(float(sub_row['MONTO FOB']), 2)
                 ncm = str(sub_row.get('NCM', '')).strip()
                 ncm10 = ncm[:10]
                 pct_der = float(sub_row.get('PCT_DERECHOS', 0))
+                pn_di = str(sub_row.get('MODELO', pn)).strip()  # part number oficial del DI
                 try:
                     qty_f = float(qty_str)
                     valor_unit = round(fob_final / qty_f, 2) if qty_f else fob_final
@@ -229,20 +260,21 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
             motivo = '' if incluir else ('NCM no incluida en Ley Minera' if not ncm_ok else '0% derechos de importación')
 
             tipo_maq, marca_maq, modelo_maq = parsear_equipo(equipos.get(pn_n, ''))
-            descripcion = descs.get(pn_n, str(item.get('PART_NAME', '')).strip())
+            descripcion = descs.get(pn_n, descs.get(pn, ''))
+            desc_ok = bool(descripcion)
             proy = proyectos.get(cust_cd, {})
             try: qty_int = int(float(qty_str)) if qty_str and qty_str != 'nan' else None
             except: qty_int = qty_str
 
             items_proc.append({
-                'pn': pn, 'qty_int': qty_int, 'fob_final': fob_final, 'ncm': ncm, 'ncm10': ncm10,
+                'pn': pn_di, 'qty_int': qty_int, 'fob_final': fob_final, 'ncm': ncm, 'ncm10': ncm10,
                 'pct_der': pct_der, 'derecho': round((fob_final or 0) * pct_der / 100, 2),
                 'valor_unit': valor_unit, 'valor_total': valor_total, 'unidad': unidad,
                 'tipo_maq': tipo_maq, 'marca_maq': marca_maq, 'modelo_maq': modelo_maq,
                 'descripcion': descripcion, 'proy': proy,
                 'origen': traducir_pais(str(item.get('PART_ORIGIN', '')).strip()),
                 'item_di': item_di, 'estado_match': estado,
-                'incluir': incluir, 'motivo': motivo,
+                'incluir': incluir, 'motivo': motivo, 'desc_ok': desc_ok,
             })
 
         validos = [i for i in items_proc if i['incluir']]
@@ -319,6 +351,11 @@ if st.session_state.get('analizado'):
         if excluidos:
             rows = ''.join([f"<div>⚠️ PN <b>{e['pn']}</b> | NCM {e['ncm10'] or 'sin NCM'} | {e['pct_der']}% | {e['motivo']}</div>" for e in excluidos])
             st.markdown(f'<div class="excluido-box"><div class="excluido-title">Ítems excluidos:</div>{rows}</div>', unsafe_allow_html=True)
+
+        sin_desc = [i for g in grupos for i in g['items'] if not i.get('desc_ok')]
+        if sin_desc:
+            rows_desc = ''.join([f"<div>⚠️ PN <b>{i['pn']}</b> — descripción no encontrada en Excel Descripciones</div>" for i in sin_desc])
+            st.markdown(f'<div class="excluido-box"><div class="excluido-title">⚠️ Descripciones faltantes:</div>{rows_desc}</div>', unsafe_allow_html=True)
         for g in grupos:
             nombre = f"TEMPLATE_{nro}_{inv}{g['sufijo']}.xlsx"
             if g['genera']:
@@ -378,6 +415,8 @@ if st.session_state.get('confirmado'):
         for g in data['grupos']:
             if g['genera']:
                 todas.extend(construir_filas(g['items'], inv, rs, cuit_val, cond_merca))
+        # Agregar excluidos al final de cada factura con SIN CM
+        todas.extend(construir_filas_excluidos(data['excluidos'], inv, rs, cuit_val, cond_merca))
     if todas:
         st.download_button(label=f"📊 DESCARGAR TEMPLATE UNIFICADO — Operación {nro}",
             data=generar_excel_bytes(todas),
