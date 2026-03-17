@@ -185,7 +185,12 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
     xl_eq = pd.ExcelFile(f_equipos)
     df_eq = pd.read_excel(f_equipos, sheet_name='data' if 'data' in xl_eq.sheet_names else xl_eq.sheet_names[0], dtype=str)
     xl_desc = pd.ExcelFile(f_desc)
-    df_desc_df = pd.read_excel(f_desc, sheet_name='Hoja2' if 'Hoja2' in xl_desc.sheet_names else xl_desc.sheet_names[0], dtype=str)
+    sheet_desc = xl_desc.sheet_names[0]
+    for sh in xl_desc.sheet_names:
+        cols = pd.read_excel(f_desc, sheet_name=sh, nrows=1, dtype=str).columns.str.strip().tolist()
+        if 'PART_NUMBER' in cols:
+            sheet_desc = sh; break
+    df_desc_df = pd.read_excel(f_desc, sheet_name=sheet_desc, dtype=str)
     df_razon = pd.read_excel(ARCHIVOS_FIJOS['razon'], dtype=str)
     df_ncm = pd.read_excel(ARCHIVOS_FIJOS['ncm'], dtype=str)
     xl_proy = pd.ExcelFile(ARCHIVOS_FIJOS['proyectos'])
