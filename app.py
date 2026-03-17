@@ -1,137 +1,42 @@
 import streamlit as st
+st.set_page_config(page_title="Template CM | INTERLOG", page_icon="📋", layout="wide")
+import streamlit as st
 import pandas as pd
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 from collections import defaultdict
-import io, math, zipfile, os
+import io, math, zipfile
 
-st.set_page_config(page_title="Template CM | INTERLOG", page_icon="📋", layout="wide")
-
-# ── CSS estilo Portal Grupo 8 ─────────────────────────────────────────────────
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
-    
-    html, body, [class*="css"] {
-        font-family: 'Roboto', sans-serif;
-        background-color: #0e1117;
-        color: #fafafa;
-    }
+    html, body, [class*="css"] { font-family: 'Roboto', sans-serif; background-color: #0e1117; color: #fafafa; }
     .block-container { padding-top: 3rem; }
     h1 { color: #00b4d8 !important; font-size: 1.8rem !important; }
-
-    .titulo-app {
-        font-size: 2rem; font-weight: 700;
-        color: #00b4d8; margin-bottom: 0;
-    }
-    .subtitulo-app {
-        font-size: 0.95rem; color: #8899aa;
-        margin-bottom: 1.5rem;
-    }
-    .seccion-titulo {
-        font-size: 1rem; font-weight: 600;
-        color: #00b4d8; text-transform: uppercase;
-        letter-spacing: 1px; margin-bottom: 1rem;
-        border-bottom: 1px solid #1e3a4a; padding-bottom: 6px;
-    }
-    .card {
-        background: #161b22; border: 1px solid #1e3a4a;
-        border-radius: 10px; padding: 20px; margin-bottom: 16px;
-    }
-    .badge-ok {
-        background: #0d2e1a; color: #3dd68c;
-        padding: 5px 12px; border-radius: 20px;
-        font-size: 12px; font-weight: 500;
-        border: 1px solid #3dd68c;
-        display: inline-block; margin: 3px 2px;
-    }
-    .badge-err {
-        background: #2e0d0d; color: #ff6b6b;
-        padding: 5px 12px; border-radius: 20px;
-        font-size: 12px; font-weight: 500;
-        border: 1px solid #ff6b6b;
-        display: inline-block; margin: 3px 2px;
-    }
-    .badge-fixed {
-        background: #1a2a1a; color: #90ee90;
-        padding: 5px 12px; border-radius: 20px;
-        font-size: 12px; font-weight: 500;
-        border: 1px solid #90ee90;
-        display: inline-block; margin: 3px 2px;
-    }
-    .resumen-card {
-        background: #161b22; border: 1px solid #1e3a4a;
-        border-radius: 8px; padding: 14px; text-align: center;
-        margin: 4px;
-    }
-    .resumen-inv { font-size: 0.85rem; color: #00b4d8; font-weight: 600; }
-    .resumen-items { font-size: 1.4rem; font-weight: 700; color: #fafafa; }
-    .resumen-fob { font-size: 0.8rem; color: #8899aa; }
-
-    .stButton > button {
-        background: linear-gradient(135deg, #00b4d8, #0077b6) !important;
-        color: white !important; font-weight: 600 !important;
-        border: none !important; border-radius: 8px !important;
-        padding: 0.6rem 1.5rem !important;
-        font-size: 1rem !important; letter-spacing: 0.5px;
-        transition: opacity 0.2s;
-    }
-    .stButton > button:hover { opacity: 0.85; }
-    .stButton > button:disabled { opacity: 0.4 !important; }
-
-    div[data-testid="stFileUploader"] {
-        background: #161b22 !important;
-        border: 1px dashed #1e3a4a !important;
-        border-radius: 8px !important;
-        padding: 8px !important;
-    }
-    div[data-testid="stFileUploader"] label p {
-        color: #00b4d8 !important;
-        font-weight: 500 !important;
-    }
-    div[data-testid="stFileUploader"] small {
-        color: #8899aa !important;
-    }
-    .stSelectbox > div > div {
-        background: #161b22 !important;
-        border: 1px solid #1e3a4a !important;
-        border-radius: 8px !important;
-    }
-    .stTextInput > div > div > input {
-        background: #161b22 !important;
-        border: 1px solid #1e3a4a !important;
-        border-radius: 8px !important;
-        color: #fafafa !important;
-    }
-    .alerta-descarte {
-        background: #2a1f00; border: 1px solid #f0c040;
-        border-radius: 8px; padding: 12px 16px;
-        color: #f0c040; font-size: 0.88rem; margin: 6px 0;
-    }
+    .subtitulo-app { font-size: 0.95rem; color: #8899aa; margin-bottom: 1.5rem; }
+    .seccion-titulo { font-size: 1rem; font-weight: 600; color: #00b4d8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; border-bottom: 1px solid #1e3a4a; padding-bottom: 6px; }
+    .badge-ok { background: #0d2e1a; color: #3dd68c; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid #3dd68c; display: inline-block; margin: 3px 2px; }
+    .badge-err { background: #2e0d0d; color: #ff6b6b; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid #ff6b6b; display: inline-block; margin: 3px 2px; }
+    .badge-fixed { background: #1a2a1a; color: #90ee90; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid #90ee90; display: inline-block; margin: 3px 2px; }
+    .excluido-box { background: #1a1000; border: 1px solid #f0c040; border-radius: 8px; padding: 12px 16px; margin: 4px 0; font-size: 0.85rem; }
+    .excluido-title { color: #f0c040; font-weight: 600; margin-bottom: 8px; }
+    .no-genera-box { background: #2e0d0d; border: 1px solid #ff6b6b; border-radius: 8px; padding: 12px 16px; margin: 4px 0; font-size: 0.85rem; color: #ff6b6b; }
+    .alerta-descarte { background: #2a1f00; border: 1px solid #f0c040; border-radius: 8px; padding: 12px 16px; color: #f0c040; font-size: 0.88rem; margin: 6px 0; }
+    .stButton > button { background: linear-gradient(135deg, #00b4d8, #0077b6) !important; color: white !important; font-weight: 600 !important; border: none !important; border-radius: 8px !important; }
+    div[data-testid="stFileUploader"] label p { color: #00b4d8 !important; font-weight: 500 !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── CONSTANTES ────────────────────────────────────────────────────────────────
-ARCHIVOS_FIJOS = {
-    'razon': 'RAZON_SOCIAL_FSM.xlsx',
-    'proyectos': 'PROYECTOS.xlsx',
-    'ncm': 'NCM_LEY_MINERA.xlsx',
-}
-
+ARCHIVOS_FIJOS = {'razon': 'RAZON_SOCIAL_FSM.xlsx', 'proyectos': 'PROYECTOS.xlsx', 'ncm': 'NCM_LEY_MINERA.xlsx'}
 PAIS_MAP = {
-    'USA': 'ESTADOS UNIDOS', 'UNITED STATES': 'ESTADOS UNIDOS',
-    'MEXICO': 'MEXICO', 'INDIA': 'INDIA', 'CANADA': 'CANADA', 'CHINA': 'CHINA',
-    'DENMARK': 'DINAMARCA', 'GERMANY': 'ALEMANIA', 'JAPAN': 'JAPON',
-    'FRANCE': 'FRANCIA', 'ITALY': 'ITALIA', 'BRAZIL': 'BRASIL',
-    'UK': 'REINO UNIDO', 'UNITED KINGDOM': 'REINO UNIDO', 'SWEDEN': 'SUECIA',
-    'SPAIN': 'ESPAÑA', 'NETHERLANDS': 'PAISES BAJOS',
-    'SOUTH KOREA': 'COREA DEL SUR', 'KOREA': 'COREA DEL SUR',
-    'AUSTRALIA': 'AUSTRALIA', 'FINLAND': 'FINLANDIA',
+    'USA': 'ESTADOS UNIDOS', 'UNITED STATES': 'ESTADOS UNIDOS', 'MEXICO': 'MEXICO',
+    'INDIA': 'INDIA', 'CANADA': 'CANADA', 'CHINA': 'CHINA', 'DENMARK': 'DINAMARCA',
+    'GERMANY': 'ALEMANIA', 'JAPAN': 'JAPON', 'FRANCE': 'FRANCIA', 'ITALY': 'ITALIA',
+    'BRAZIL': 'BRASIL', 'UK': 'REINO UNIDO', 'UNITED KINGDOM': 'REINO UNIDO',
+    'SWEDEN': 'SUECIA', 'SPAIN': 'ESPANA', 'NETHERLANDS': 'PAISES BAJOS',
+    'SOUTH KOREA': 'COREA DEL SUR', 'KOREA': 'COREA DEL SUR', 'AUSTRALIA': 'AUSTRALIA',
 }
-UNIDAD_MAP = {
-    '07 - UNIDAD': 'UNIDAD', '01 - KILOGRAMO': 'KILOGRAMO',
-    '06 - METRO': 'METRO', '10 - LITRO': 'LITRO',
-}
+UNIDAD_MAP = {'07 - UNIDAD': 'UNIDAD', '01 - KILOGRAMO': 'KILOGRAMO', '06 - METRO': 'METRO', '10 - LITRO': 'LITRO'}
 COLUMNAS = [
     'ID','InscRUMP','ActiServ','NroInsc','RazonSocial','CUIT','ImpDirecta','CondMerca',
     'AnioFabricacion','RazonSocialLeasing','CuitLeasing','SimiSira','ValorFOBTotal',
@@ -140,8 +45,7 @@ COLUMNAS = [
     'UnidadMedida','PosicionArancelaria','Marca','Modelo','NroDeSerie','ValorUnitario',
     'ValorTotalItem','SerieDelMotor','MarcaDelMotor','ModeloMotor','TipoPlantaDestino',
     'FinalidadDeUso','CodigoParte','TipoDeMaquina','MarcaMaquina','ModeloMaquina',
-    'Expedientes Escalonados','Proveedor','PaisOrigenDeLaMercaderia','Observaciones',
-    'ITEM_DESPACHO'
+    'Expedientes Escalonados','Proveedor','PaisOrigenDeLaMercaderia','Observaciones','ITEM_DESPACHO'
 ]
 SIN_COLOR = {
     'ID','InscRUMP','ActiServ','NroInsc','RazonSocial','CUIT','ImpDirecta','CondMerca',
@@ -149,18 +53,20 @@ SIN_COLOR = {
     'Observaciones','ITEM_DESPACHO'
 }
 
-# ── HELPERS ───────────────────────────────────────────────────────────────────
 def safe_float(v):
     try:
         f = float(v); return 0.0 if math.isnan(f) else f
     except: return 0.0
 
+def norm_pn(pn):
+    return str(pn).strip().lstrip('0')
+
 def traducir_pais(p):
     return PAIS_MAP.get(str(p).strip().upper(), str(p).strip().upper())
 
 def parsear_equipo(eq):
-    if not eq or eq.strip() in ('', 'nan'): return '', 'CAT', ''
-    eq = eq.strip()
+    if not eq or str(eq).strip() in ('', 'nan'): return '', 'CAT', ''
+    eq = str(eq).strip()
     if ' - ' in eq:
         p = eq.split(' - ', 1); return p[0].strip(), 'CAT', p[1].strip()
     tokens = eq.split()
@@ -176,87 +82,110 @@ def calcular_fobs(items):
         safe_float(i.get('BO_FREIGHT_CHARGE')) + safe_float(i.get('EMERGENCY_FILL_CHARGE_VAL'))
         for i in items
     )
-    return [
-        round(safe_float(i.get('EXTENDED_PRICE')) +
-              (safe_float(i.get('EXTENDED_PRICE')) * total_gastos / total_ext if total_ext else 0), 2)
-        for i in items
-    ]
+    return [round(safe_float(i.get('EXTENDED_PRICE')) + (safe_float(i.get('EXTENDED_PRICE')) * total_gastos / total_ext if total_ext else 0), 2) for i in items]
 
-def match_fob(pn, qty, fob_calc, subitem_df, usados):
-    pn_str = str(pn).strip()
+def match_subitem(pn, qty, fob_calc, df_sub, usados):
+    pn_n = norm_pn(pn)
     try: qty_val = float(qty)
     except: return None, None, 'sin_match'
-    mask = (subitem_df['MODELO'].astype(str).str.strip() == pn_str) & \
-           (subitem_df['CANTIDAD'].astype(float) == qty_val)
-    disponibles = subitem_df[mask & ~subitem_df.index.isin(usados)].copy()
-    if disponibles.empty: return None, None, 'sin_match'
-    match = disponibles[(disponibles['MONTO FOB'].astype(float) - fob_calc).abs() <= 0.02]
-    if not match.empty:
-        idx = match.index[0]; usados.add(idx)
-        return match.loc[idx], str(match.loc[idx]['ITEM']), 'unico'
-    idx = disponibles.index[0]; usados.add(idx)
-    return disponibles.loc[idx], str(disponibles.loc[idx]['ITEM']), 'descarte'
+    mask = (df_sub['MODELO_NORM'] == pn_n) & (df_sub['CANTIDAD'].astype(float) == qty_val)
+    disp = df_sub[mask & ~df_sub.index.isin(usados)].copy()
+    if disp.empty: return None, None, 'sin_match'
+    m = disp[(disp['MONTO FOB'].astype(float) - fob_calc).abs() <= 0.02]
+    if not m.empty:
+        idx = m.index[0]; usados.add(idx); return m.loc[idx], str(m.loc[idx]['ITEM']), 'unico'
+    idx = disp.index[0]; usados.add(idx); return disp.loc[idx], str(disp.loc[idx]['ITEM']), 'descarte'
 
 def generar_excel_bytes(filas):
     wb = openpyxl.Workbook(); ws = wb.active; ws.title = 'general'
     FILL_AM = PatternFill('solid', fgColor='FFFF00')
     FH = Font(name='Arial', size=11, bold=True)
     FD = Font(name='Calibri', size=11)
-    for col_idx, col_name in enumerate(COLUMNAS, 1):
-        cell = ws.cell(row=1, column=col_idx, value=col_name)
+    for ci, cn in enumerate(COLUMNAS, 1):
+        cell = ws.cell(row=1, column=ci, value=cn)
         cell.font = FH; cell.alignment = Alignment(horizontal='left', vertical='center')
-        if col_name not in SIN_COLOR: cell.fill = FILL_AM
-    for row_idx, fila in enumerate(filas, 2):
-        for col_idx, col_name in enumerate(COLUMNAS, 1):
-            val = fila.get(col_name)
-            cell = ws.cell(row=row_idx, column=col_idx, value=val)
+        if cn not in SIN_COLOR: cell.fill = FILL_AM
+    for ri, fila in enumerate(filas, 2):
+        for ci, cn in enumerate(COLUMNAS, 1):
+            cell = ws.cell(row=ri, column=ci, value=fila.get(cn))
             cell.font = FD; cell.alignment = Alignment(vertical='center')
     for col in ws.columns:
-        max_len = max((len(str(c.value)) if c.value is not None else 0) for c in col)
-        ws.column_dimensions[col[0].column_letter].width = min(max(max_len + 2, 10), 45)
+        ml = max((len(str(c.value)) if c.value is not None else 0) for c in col)
+        ws.column_dimensions[col[0].column_letter].width = min(max(ml + 2, 10), 45)
     ws.freeze_panes = 'A2'
     buf = io.BytesIO(); wb.save(buf); buf.seek(0); return buf.getvalue()
 
+def construir_filas(grupo_items, inv, rs, cuit_val, cond_merca):
+    valor_fob_total = round(sum(i['fob_final'] for i in grupo_items if i['fob_final']), 2)
+    filas = []
+    for f in grupo_items:
+        p = f['proy']
+        filas.append({
+            'ID': 0, 'InscRUMP': str(rs['InscRUMP']), 'ActiServ': str(rs['ActiServ']),
+            'NroInsc': str(rs['NroInsc']), 'RazonSocial': str(rs['RazonSocial']),
+            'CUIT': cuit_val, 'ImpDirecta': str(rs['ImpDirecta']), 'CondMerca': cond_merca,
+            'AnioFabricacion': None, 'RazonSocialLeasing': None, 'CuitLeasing': None, 'SimiSira': None,
+            'ValorFOBTotal': valor_fob_total,
+            'ProyectoMinero': str(p.get('ProyectoMinero', '')).upper() if p else '',
+            'Radicacion': str(p.get('Radicacion', '')).upper() if p else '',
+            'DetalleTransitorioDeposito': str(p.get('DetalleTransitorioDeposito', '')) if p else '',
+            'ClasificacionDeArticulo': str(rs['ClasificacionDeArticulo']),
+            'TipoDeFactura': 'DEFINITIVA', 'NumeroDeFactura': inv, 'OrdenDeCompra': None,
+            'Descripcion': f['descripcion'], 'Cantidad': f['qty_int'], 'UnidadMedida': f['unidad'],
+            'PosicionArancelaria': f['ncm'], 'Marca': 'CATERPILLAR', 'Modelo': 'NO POSEE',
+            'NroDeSerie': 'NO POSEE', 'ValorUnitario': f['valor_unit'], 'ValorTotalItem': f['valor_total'],
+            'SerieDelMotor': None, 'MarcaDelMotor': None, 'ModeloMotor': None,
+            'TipoPlantaDestino': None, 'FinalidadDeUso': None,
+            'CodigoParte': f['pn'], 'TipoDeMaquina': f['tipo_maq'],
+            'MarcaMaquina': f['marca_maq'], 'ModeloMaquina': f['modelo_maq'],
+            'Expedientes Escalonados': 'no', 'Proveedor': 'CATERPILLAR',
+            'PaisOrigenDeLaMercaderia': f['origen'], 'Observaciones': None,
+            'ITEM_DESPACHO': f['item_di'],
+        })
+    return filas
+
 def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
-    # Archivos dinámicos
-    df_madre = pd.read_excel(f_madre, sheet_name='Hoja2', dtype=str)
-    df_subitem = pd.read_excel(f_despacho, sheet_name='Subitem', dtype=str)
-
+    xl_madre = pd.ExcelFile(f_madre)
+    sheet_madre = 'Hoja1' if 'Hoja1' in xl_madre.sheet_names else xl_madre.sheet_names[0]
+    df_madre = pd.read_excel(f_madre, sheet_name=sheet_madre, dtype=str)
+    df_sub = pd.read_excel(f_despacho, sheet_name='Subitem', dtype=str)
+    df_liq = pd.read_excel(f_despacho, sheet_name='Liquidación ítem', dtype=str)
     xl_eq = pd.ExcelFile(f_equipos)
-    sheet_eq = 'data' if 'data' in xl_eq.sheet_names else xl_eq.sheet_names[0]
-    df_eq = pd.read_excel(f_equipos, sheet_name=sheet_eq, dtype=str)
-
+    df_eq = pd.read_excel(f_equipos, sheet_name='data' if 'data' in xl_eq.sheet_names else xl_eq.sheet_names[0], dtype=str)
     xl_desc = pd.ExcelFile(f_desc)
-    sheet_desc = 'Hoja2' if 'Hoja2' in xl_desc.sheet_names else xl_desc.sheet_names[0]
-    df_desc_df = pd.read_excel(f_desc, sheet_name=sheet_desc, dtype=str)
-
-    # Archivos fijos del repo
+    df_desc_df = pd.read_excel(f_desc, sheet_name='Hoja2' if 'Hoja2' in xl_desc.sheet_names else xl_desc.sheet_names[0], dtype=str)
     df_razon = pd.read_excel(ARCHIVOS_FIJOS['razon'], dtype=str)
-    df_ncm_raw = pd.read_excel(ARCHIVOS_FIJOS['ncm'], dtype=str)
-
+    df_ncm = pd.read_excel(ARCHIVOS_FIJOS['ncm'], dtype=str)
     xl_proy = pd.ExcelFile(ARCHIVOS_FIJOS['proyectos'])
-    sheet_proy = 'Hoja2' if 'Hoja2' in xl_proy.sheet_names else xl_proy.sheet_names[0]
-    df_proy = pd.read_excel(ARCHIVOS_FIJOS['proyectos'], sheet_name=sheet_proy, dtype=str)
+    df_proy = pd.read_excel(ARCHIVOS_FIJOS['proyectos'], sheet_name='Hoja2' if 'Hoja2' in xl_proy.sheet_names else xl_proy.sheet_names[0], dtype=str)
 
-    for df in [df_madre, df_subitem, df_razon, df_proy, df_eq, df_desc_df, df_ncm_raw]:
+    for df in [df_madre, df_sub, df_liq, df_razon, df_proy, df_eq, df_desc_df, df_ncm]:
         df.columns = df.columns.str.strip()
     for col in df_proy.columns:
         df_proy[col] = df_proy[col].astype(str).str.replace('\xa0', ' ', regex=False).str.strip()
 
-    ncm_validas = set(df_ncm_raw['NCM'].str.strip().tolist())
+    ncm_validas = set(df_ncm['NCM'].str.strip().tolist())
     rs = df_razon.iloc[0]
+    try: cuit_val = int(float(str(rs['CUIT'])))
+    except: cuit_val = str(rs['CUIT'])
     proyectos = {str(r['CUST_CD']).strip(): r.to_dict() for _, r in df_proy.iterrows()}
 
     eq_col_pn = 'Part number' if 'Part number' in df_eq.columns else df_eq.columns[0]
     eq_col_eq = 'Equipos' if 'Equipos' in df_eq.columns else df_eq.columns[-1]
-    equipos = {str(r[eq_col_pn]).strip(): (str(r[eq_col_eq]).strip() if pd.notna(r[eq_col_eq]) else '') for _, r in df_eq.iterrows()}
+    equipos = {norm_pn(str(r[eq_col_pn])): (str(r[eq_col_eq]).strip() if pd.notna(r[eq_col_eq]) else '') for _, r in df_eq.iterrows()}
 
     desc_col_pn = 'PART_NUMBER' if 'PART_NUMBER' in df_desc_df.columns else df_desc_df.columns[0]
     desc_col_d = 'DESCRIPCION' if 'DESCRIPCION' in df_desc_df.columns else df_desc_df.columns[-1]
-    descs = {str(r[desc_col_pn]).strip(): (str(r[desc_col_d]).strip() if pd.notna(r[desc_col_d]) else '') for _, r in df_desc_df.iterrows()}
+    descs = {norm_pn(str(r[desc_col_pn])): (str(r[desc_col_d]).strip() if pd.notna(r[desc_col_d]) else '') for _, r in df_desc_df.iterrows()}
 
-    try: cuit_val = int(float(str(rs['CUIT'])))
-    except: cuit_val = str(rs['CUIT'])
+    derechos_liq = df_liq[df_liq['CONCEPTO'].str.contains('010', na=False)][['ITEM','PORCENTAJE']].copy()
+    derechos_liq['PORCENTAJE'] = pd.to_numeric(derechos_liq['PORCENTAJE'], errors='coerce').fillna(0)
+    derechos_dict = dict(zip(derechos_liq['ITEM'], derechos_liq['PORCENTAJE']))
+
+    df_sub = df_sub.dropna(subset=['MODELO'])
+    df_sub['MODELO_NORM'] = df_sub['MODELO'].astype(str).apply(norm_pn)
+    df_sub['NCM10'] = df_sub['NCM'].astype(str).str[:10]
+    df_sub['PCT_DERECHOS'] = df_sub['ITEM'].map(derechos_dict).fillna(0)
 
     facturas = defaultdict(list)
     for _, row in df_madre.iterrows():
@@ -264,95 +193,70 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
         if inv and inv != 'nan':
             facturas[inv].append(row.to_dict())
 
-    resultados = {}
-    alertas = []
+    preview = {}
     usados_global = set()
 
     for inv, items in facturas.items():
         fobs_calc = calcular_fobs(items)
-        filas_candidatas = []
+        items_proc = []
 
         for item, fob_calc in zip(items, fobs_calc):
             pn = str(item.get('PART_NUMBER', '')).strip()
+            pn_n = norm_pn(pn)
             qty_str = str(item.get('QTY', '')).strip()
             cust_cd = str(item.get('CUST_CD', '')).strip()
 
-            sub_row, item_despacho, estado = match_fob(pn, qty_str, fob_calc, df_subitem, usados_global)
+            sub_row, item_di, estado = match_subitem(pn, qty_str, fob_calc, df_sub, usados_global)
 
             fob_final = ncm = valor_unit = valor_total = None
-            unidad = 'UNIDAD'; ncm_10 = ''
+            unidad = 'UNIDAD'; ncm10 = ''; pct_der = 0.0
 
             if sub_row is not None:
                 fob_final = round(float(sub_row['MONTO FOB']), 2)
                 ncm = str(sub_row.get('NCM', '')).strip()
-                ncm_10 = ncm[:10]
+                ncm10 = ncm[:10]
+                pct_der = float(sub_row.get('PCT_DERECHOS', 0))
                 try:
                     qty_f = float(qty_str)
                     valor_unit = round(fob_final / qty_f, 2) if qty_f else fob_final
                 except: valor_unit = fob_final
                 valor_total = fob_final
                 unidad = UNIDAD_MAP.get(str(sub_row.get('UNIDAD DECLARADA', '')).strip(), 'UNIDAD')
-                if estado == 'descarte':
-                    alertas.append({
-                        'factura': inv, 'pn': pn, 'fob_calc': fob_calc,
-                        'fob_despacho': fob_final, 'diff': round(fob_final - fob_calc, 2),
-                        'item_despacho': item_despacho
-                    })
 
-            if ncm_10 not in ncm_validas:
-                continue
+            ncm_ok = ncm10 in ncm_validas
+            paga_der = pct_der > 0
+            incluir = ncm_ok and paga_der
+            motivo = '' if incluir else ('NCM no incluida en Ley Minera' if not ncm_ok else '0% derechos de importación')
 
-            tipo_maq, marca_maq, modelo_maq = parsear_equipo(equipos.get(pn, ''))
-            descripcion = descs.get(pn, str(item.get('PART_NAME', '')).strip())
+            tipo_maq, marca_maq, modelo_maq = parsear_equipo(equipos.get(pn_n, ''))
+            descripcion = descs.get(pn_n, str(item.get('PART_NAME', '')).strip())
             proy = proyectos.get(cust_cd, {})
-
             try: qty_int = int(float(qty_str)) if qty_str and qty_str != 'nan' else None
             except: qty_int = qty_str
 
-            filas_candidatas.append({
-                'pn': pn, 'qty_int': qty_int, 'fob_final': fob_final, 'ncm': ncm,
+            items_proc.append({
+                'pn': pn, 'qty_int': qty_int, 'fob_final': fob_final, 'ncm': ncm, 'ncm10': ncm10,
+                'pct_der': pct_der, 'derecho': round((fob_final or 0) * pct_der / 100, 2),
                 'valor_unit': valor_unit, 'valor_total': valor_total, 'unidad': unidad,
                 'tipo_maq': tipo_maq, 'marca_maq': marca_maq, 'modelo_maq': modelo_maq,
                 'descripcion': descripcion, 'proy': proy,
                 'origen': traducir_pais(str(item.get('PART_ORIGIN', '')).strip()),
-                'item_despacho': item_despacho,
+                'item_di': item_di, 'estado_match': estado,
+                'incluir': incluir, 'motivo': motivo,
             })
 
-        if not filas_candidatas:
-            continue
+        validos = [i for i in items_proc if i['incluir']]
+        excluidos = [i for i in items_proc if not i['incluir']]
+        grupos = [validos[i:i+30] for i in range(0, max(len(validos), 1), 30)]
+        grupos_info = []
+        for g_idx, grupo in enumerate(grupos, 1):
+            total_der = round(sum(i['derecho'] for i in grupo), 2)
+            sufijo = f'.{g_idx}' if len(grupos) > 1 else ''
+            grupos_info.append({'idx': g_idx, 'sufijo': sufijo, 'items': grupo, 'total_der': total_der, 'genera': len(grupo) > 0 and total_der >= 50})
 
-        valor_fob_total = round(sum(f['fob_final'] for f in filas_candidatas if f['fob_final']), 2)
-        filas = []
-        for f in filas_candidatas:
-            proy = f['proy']
-            filas.append({
-                'ID': 0,
-                'InscRUMP': str(rs['InscRUMP']), 'ActiServ': str(rs['ActiServ']),
-                'NroInsc': str(rs['NroInsc']), 'RazonSocial': str(rs['RazonSocial']),
-                'CUIT': cuit_val, 'ImpDirecta': str(rs['ImpDirecta']),
-                'CondMerca': cond_merca,
-                'AnioFabricacion': None, 'RazonSocialLeasing': None, 'CuitLeasing': None, 'SimiSira': None,
-                'ValorFOBTotal': valor_fob_total,
-                'ProyectoMinero': str(proy.get('ProyectoMinero', '')).upper() if proy else '',
-                'Radicacion': str(proy.get('Radicacion', '')).upper() if proy else '',
-                'DetalleTransitorioDeposito': str(proy.get('DetalleTransitorioDeposito', '')) if proy else '',
-                'ClasificacionDeArticulo': str(rs['ClasificacionDeArticulo']),
-                'TipoDeFactura': 'DEFINITIVA', 'NumeroDeFactura': inv, 'OrdenDeCompra': None,
-                'Descripcion': f['descripcion'], 'Cantidad': f['qty_int'], 'UnidadMedida': f['unidad'],
-                'PosicionArancelaria': f['ncm'], 'Marca': 'CATERPILLAR', 'Modelo': 'NO POSEE',
-                'NroDeSerie': 'NO POSEE', 'ValorUnitario': f['valor_unit'], 'ValorTotalItem': f['valor_total'],
-                'SerieDelMotor': None, 'MarcaDelMotor': None, 'ModeloMotor': None,
-                'TipoPlantaDestino': None, 'FinalidadDeUso': None,
-                'CodigoParte': f['pn'], 'TipoDeMaquina': f['tipo_maq'],
-                'MarcaMaquina': f['marca_maq'], 'ModeloMaquina': f['modelo_maq'],
-                'Expedientes Escalonados': 'no', 'Proveedor': 'CATERPILLAR',
-                'PaisOrigenDeLaMercaderia': f['origen'], 'Observaciones': None,
-                'ITEM_DESPACHO': f['item_despacho'],
-            })
-        resultados[inv] = filas
+        preview[inv] = {'items_proc': items_proc, 'excluidos': excluidos, 'grupos': grupos_info}
 
-    return resultados, alertas
-
+    return preview, rs, cuit_val
 
 # ── UI ────────────────────────────────────────────────────────────────────────
 st.title("📋 Template CM")
@@ -360,143 +264,123 @@ st.markdown('<p class="subtitulo-app">INTERLOG Comercio Exterior — Generación
 st.markdown("---")
 
 col_main, col_config = st.columns([2.5, 1])
-
 with col_main:
     st.markdown('<p class="seccion-titulo">📂 Archivos de la operación</p>', unsafe_allow_html=True)
-
     nro_ref = st.text_input("Número de referencia de la operación", placeholder="ej: 982755")
-
     c1, c2 = st.columns(2)
     with c1:
-        label_facaero = f"Excel FACAERO {nro_ref}" if nro_ref else "Excel FACAERO (ingresá el número de referencia)"
-        f_madre = st.file_uploader(label_facaero, type=["xlsx"])
-
-        label_eq = f"Excel Equipos {nro_ref}" if nro_ref else "Excel Equipos"
-        f_equipos = st.file_uploader(label_eq, type=["xlsx"])
-
+        f_madre = st.file_uploader(f"Excel FACAERO {nro_ref}" if nro_ref else "Excel FACAERO", type=["xlsx"])
+        f_equipos = st.file_uploader(f"Excel Equipos {nro_ref}" if nro_ref else "Excel Equipos", type=["xlsx"])
     with c2:
-        label_di = f"Excel DI {nro_ref}" if nro_ref else "Excel DI (ingresá el número de referencia)"
-        f_despacho = st.file_uploader(label_di, type=["xlsx"])
-
-        label_desc = f"Excel Descripciones {nro_ref}" if nro_ref else "Excel Descripciones"
-        f_descripciones = st.file_uploader(label_desc, type=["xlsx"])
+        f_despacho = st.file_uploader(f"Excel DI {nro_ref}" if nro_ref else "Excel DI", type=["xlsx"])
+        f_descripciones = st.file_uploader(f"Excel Descripciones {nro_ref}" if nro_ref else "Excel Descripciones", type=["xlsx"])
 
 with col_config:
     st.markdown('<p class="seccion-titulo">⚙️ Configuración</p>', unsafe_allow_html=True)
-
     cond_merca = st.selectbox("Condición de Mercadería", ["NUEVA", "USADA"])
-
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown('<p class="seccion-titulo">📋 Estado</p>', unsafe_allow_html=True)
-
     archivos_din = [f_madre, f_despacho, f_equipos, f_descripciones]
-    nombres_din = [
-        f"FACAERO {nro_ref or ''}",
-        f"DI {nro_ref or ''}",
-        "Equipos",
-        "Descripciones"
-    ]
+    nombres_din = [f"FACAERO {nro_ref or ''}", f"DI {nro_ref or ''}", "Equipos", "Descripciones"]
+    st.markdown('<p class="seccion-titulo">📋 Estado</p>', unsafe_allow_html=True)
     for f, n in zip(archivos_din, nombres_din):
-        if f:
-            st.markdown(f'<span class="badge-ok">✓ {n}</span>', unsafe_allow_html=True)
-        else:
-            st.markdown(f'<span class="badge-err">✗ {n}</span>', unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("**Archivos fijos del sistema:**")
+        if f: st.markdown(f'<span class="badge-ok">✓ {n}</span>', unsafe_allow_html=True)
+        else: st.markdown(f'<span class="badge-err">✗ {n}</span>', unsafe_allow_html=True)
+    st.markdown("<br>**Archivos fijos del sistema:**")
     for nombre in ["Razón Social", "Proyectos", "NCM Ley Minera"]:
         st.markdown(f'<span class="badge-fixed">⚙ {nombre}</span>', unsafe_allow_html=True)
 
 st.markdown("---")
-
 todos_cargados = all(archivos_din) and bool(nro_ref)
-
 if not nro_ref:
     st.info("📝 Ingresá el número de referencia de la operación para continuar.")
 
-if st.button("🚀 GENERAR TEMPLATES", disabled=not todos_cargados, use_container_width=True):
-    with st.spinner("Procesando operación..."):
+if st.button("🔍 ANALIZAR OPERACIÓN", disabled=not todos_cargados, use_container_width=True):
+    with st.spinner("Analizando..."):
         try:
-            resultados, alertas = procesar(f_madre, f_despacho, f_equipos, f_descripciones, cond_merca)
-            st.session_state['resultados'] = resultados
-            st.session_state['alertas'] = alertas
-            st.session_state['procesado'] = True
-            st.session_state['nro_ref'] = nro_ref
+            preview, rs, cuit_val = procesar(f_madre, f_despacho, f_equipos, f_descripciones, cond_merca)
+            st.session_state.update({'preview': preview, 'rs': rs, 'cuit_val': cuit_val,
+                                     'cond_merca': cond_merca, 'nro_ref': nro_ref,
+                                     'analizado': True, 'confirmado': False})
         except Exception as e:
-            st.error(f"Error al procesar: {e}")
+            st.error(f"Error: {e}")
             import traceback; st.code(traceback.format_exc())
 
-if st.session_state.get('procesado'):
-    resultados = st.session_state['resultados']
-    alertas = st.session_state['alertas']
-    nro = st.session_state.get('nro_ref', '')
+if st.session_state.get('analizado'):
+    preview = st.session_state['preview']
+    nro = st.session_state['nro_ref']
+    st.markdown("### 🔎 Revisión previa — Confirmá antes de generar")
+
+    for inv, data in preview.items():
+        excluidos = data['excluidos']
+        grupos = data['grupos']
+        total = len(data['items_proc'])
+        validos = sum(len(g['items']) for g in grupos)
+        st.markdown(f"**Factura {inv}** — {total} ítems totales | {validos} válidos | {len(excluidos)} excluidos")
+        if excluidos:
+            rows = ''.join([f"<div>⚠️ PN <b>{e['pn']}</b> | NCM {e['ncm10'] or 'sin NCM'} | {e['pct_der']}% | {e['motivo']}</div>" for e in excluidos])
+            st.markdown(f'<div class="excluido-box"><div class="excluido-title">Ítems excluidos:</div>{rows}</div>', unsafe_allow_html=True)
+        for g in grupos:
+            nombre = f"TEMPLATE_{nro}_{inv}{g['sufijo']}.xlsx"
+            if g['genera']:
+                st.markdown(f'<span class="badge-ok">✅ {nombre} — {len(g["items"])} ítems | Derechos: USD {g["total_der"]}</span>', unsafe_allow_html=True)
+            else:
+                st.markdown(f'<div class="no-genera-box">❌ {nombre} NO SE GENERA — {len(g["items"])} ítems | Derechos: USD {g["total_der"]} (menor a USD 50)</div>', unsafe_allow_html=True)
+
+    st.markdown("---")
+    if st.button("✅ CONFIRMAR Y GENERAR TEMPLATES", use_container_width=True):
+        st.session_state['confirmado'] = True
+
+if st.session_state.get('confirmado'):
+    preview = st.session_state['preview']
+    rs = st.session_state['rs']
+    cuit_val = st.session_state['cuit_val']
+    cond_merca = st.session_state['cond_merca']
+    nro = st.session_state['nro_ref']
+
+    excel_bytes = {}
+    alertas = []
+
+    for inv, data in preview.items():
+        for g in data['grupos']:
+            if not g['genera']: continue
+            nombre = f"{inv}{g['sufijo']}"
+            filas = construir_filas(g['items'], inv, rs, cuit_val, cond_merca)
+            excel_bytes[nombre] = generar_excel_bytes(filas)
+            for item in g['items']:
+                if item['estado_match'] == 'descarte':
+                    alertas.append(f"<b>{inv}</b> | PN <code>{item['pn']}</code> → ITEM <code>{item['item_di']}</code> asignado por descarte. Verificar.")
 
     if alertas:
-        st.markdown("### ⚠️ Alertas — Verificar asignaciones por descarte")
+        st.markdown("### ⚠️ Alertas — Asignaciones por descarte")
         for a in alertas:
-            st.markdown(f"""
-            <div class="alerta-descarte">
-                ⚠️ <b>{a['factura']}</b> | PN <code>{a['pn']}</code> → ITEM <code>{a['item_despacho']}</code> asignado por descarte |
-                FOB calculado: {a['fob_calc']} | FOB despacho: {a['fob_despacho']} | <b>Diferencia: {a['diff']}</b>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f'<div class="alerta-descarte">⚠️ {a}</div>', unsafe_allow_html=True)
 
-    st.markdown("### 📊 Resumen de la operación")
-    total_items = sum(len(v) for v in resultados.values())
-
-    cols_res = st.columns(min(len(resultados), 4))
-    for i, (inv, filas) in enumerate(resultados.items()):
-        with cols_res[i % 4]:
-            st.markdown(f"""
-            <div class="resumen-card">
-                <div class="resumen-inv">{inv}</div>
-                <div class="resumen-items">{len(filas)}</div>
-                <div class="resumen-fob">ítems | FOB: USD {filas[0]['ValorFOBTotal'] if filas else '-'}</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-    st.markdown(f"**Total: {len(resultados)} facturas — {total_items} ítems procesados**")
-    st.markdown("---")
-
-    st.markdown("### 📥 Descargar templates")
-    excel_bytes = {}
-    cols_dl = st.columns(min(len(resultados), 4))
-    for i, (inv, filas) in enumerate(resultados.items()):
-        b = generar_excel_bytes(filas)
-        excel_bytes[inv] = b
+    st.markdown(f"### 📥 Descargar — {len(excel_bytes)} templates generados")
+    cols_dl = st.columns(min(len(excel_bytes), 4))
+    for i, (nombre, b) in enumerate(excel_bytes.items()):
         with cols_dl[i % 4]:
-            st.download_button(
-                label=f"📄 {inv}",
-                data=b,
-                file_name=f"TEMPLATE_{nro}_{inv}.xlsx",
+            st.download_button(label=f"📄 {nombre}", data=b,
+                file_name=f"TEMPLATE_{nro}_{nombre}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                key=f"dl_{inv}"
-            )
+                key=f"dl_{nombre}")
 
-    st.markdown("<br>", unsafe_allow_html=True)
     zip_buf = io.BytesIO()
     with zipfile.ZipFile(zip_buf, 'w') as zf:
-        for inv, b in excel_bytes.items():
-            zf.writestr(f"TEMPLATE_{nro}_{inv}.xlsx", b)
+        for nombre, b in excel_bytes.items():
+            zf.writestr(f"TEMPLATE_{nro}_{nombre}.xlsx", b)
     zip_buf.seek(0)
+    st.download_button(label=f"📦 DESCARGAR TODOS (ZIP) — Operación {nro}",
+        data=zip_buf.getvalue(), file_name=f"TEMPLATES_{nro}.zip",
+        mime="application/zip", use_container_width=True)
 
-    st.download_button(
-        label=f"📦 DESCARGAR TODOS — Operación {nro}",
-        data=zip_buf.getvalue(),
-        file_name=f"TEMPLATES_{nro}.zip",
-        mime="application/zip",
-        use_container_width=True
-    )
-
-    # Template unificado
-    todas_las_filas = []
-    for filas in resultados.values():
-        todas_las_filas.extend(filas)
-    b_unificado = generar_excel_bytes(todas_las_filas)
-    st.download_button(
-        label=f"📊 DESCARGAR TEMPLATE UNIFICADO — Operación {nro}",
-        data=b_unificado,
-        file_name=f"TEMPLATE_UNIFICADO_{nro}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        use_container_width=True
-    )
+    todas = []
+    for inv, data in preview.items():
+        for g in data['grupos']:
+            if g['genera']:
+                todas.extend(construir_filas(g['items'], inv, rs, cuit_val, cond_merca))
+    if todas:
+        st.download_button(label=f"📊 DESCARGAR TEMPLATE UNIFICADO — Operación {nro}",
+            data=generar_excel_bytes(todas),
+            file_name=f"TEMPLATE_UNIFICADO_{nro}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True)
