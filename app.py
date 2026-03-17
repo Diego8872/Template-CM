@@ -146,6 +146,8 @@ def construir_filas_excluidos(excluidos, inv, rs, cuit_val, cond_merca):
             'ITEM_DESPACHO': f['item_di'],
         })
     return filas
+
+def construir_filas(grupo_items, inv, rs, cuit_val, cond_merca):
     valor_fob_total = round(sum(i['fob_final'] for i in grupo_items if i['fob_final']), 2)
     filas = []
     for f in grupo_items:
