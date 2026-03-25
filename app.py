@@ -31,14 +31,200 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 ARCHIVOS_FIJOS = {'razon': 'RAZON_SOCIAL_FSM.xlsx', 'proyectos': 'PROYECTOS.xlsx', 'ncm': 'NCM_LEY_MINERA.xlsx'}
-PAIS_MAP = {
-    'USA': 'ESTADOS UNIDOS', 'UNITED STATES': 'ESTADOS UNIDOS', 'MEXICO': 'MEXICO',
-    'INDIA': 'INDIA', 'CANADA': 'CANADA', 'CHINA': 'CHINA', 'DENMARK': 'DINAMARCA',
-    'GERMANY': 'ALEMANIA', 'JAPAN': 'JAPON', 'FRANCE': 'FRANCIA', 'ITALY': 'ITALIA',
-    'BRAZIL': 'BRASIL', 'UK': 'REINO UNIDO', 'UNITED KINGDOM': 'REINO UNIDO',
-    'SWEDEN': 'SUECIA', 'SPAIN': 'ESPANA', 'NETHERLANDS': 'PAISES BAJOS',
-    'SOUTH KOREA': 'COREA DEL SUR', 'KOREA': 'COREA DEL SUR', 'AUSTRALIA': 'AUSTRALIA',
+
+TRADUCCION_ORIGEN = {
+    # América del Norte
+    "USA": "ESTADOS UNIDOS",
+    "UNITED STATES": "ESTADOS UNIDOS",
+    "UNITED STATES OF AMERICA": "ESTADOS UNIDOS",
+    "MEXICO": "MÉXICO",
+    "CANADA": "CANADÁ",
+    # América Central y Caribe
+    "GUATEMALA": "GUATEMALA",
+    "BELIZE": "BELICE",
+    "HONDURAS": "HONDURAS",
+    "EL SALVADOR": "EL SALVADOR",
+    "NICARAGUA": "NICARAGUA",
+    "COSTA RICA": "COSTA RICA",
+    "PANAMA": "PANAMÁ",
+    "CUBA": "CUBA",
+    "HAITI": "HAITÍ",
+    "DOMINICAN REPUBLIC": "REPÚBLICA DOMINICANA",
+    "PUERTO RICO": "PUERTO RICO",
+    "JAMAICA": "JAMAICA",
+    "TRINIDAD AND TOBAGO": "TRINIDAD Y TOBAGO",
+    "BARBADOS": "BARBADOS",
+    # América del Sur
+    "BRAZIL": "BRASIL",
+    "ARGENTINA": "ARGENTINA",
+    "CHILE": "CHILE",
+    "PERU": "PERÚ",
+    "COLOMBIA": "COLOMBIA",
+    "VENEZUELA": "VENEZUELA",
+    "ECUADOR": "ECUADOR",
+    "BOLIVIA": "BOLIVIA",
+    "PARAGUAY": "PARAGUAY",
+    "URUGUAY": "URUGUAY",
+    "GUYANA": "GUYANA",
+    "SURINAME": "SURINAM",
+    "FRENCH GUIANA": "GUAYANA FRANCESA",
+    # Europa Occidental
+    "GERMANY": "ALEMANIA",
+    "ITALY": "ITALIA",
+    "FRANCE": "FRANCIA",
+    "SPAIN": "ESPAÑA",
+    "UNITED KINGDOM": "REINO UNIDO",
+    "UK": "REINO UNIDO",
+    "GREAT BRITAIN": "REINO UNIDO",
+    "ENGLAND": "REINO UNIDO",
+    "BELGIUM": "BÉLGICA",
+    "NETHERLANDS": "PAÍSES BAJOS",
+    "HOLLAND": "PAÍSES BAJOS",
+    "LUXEMBOURG": "LUXEMBURGO",
+    "SWITZERLAND": "SUIZA",
+    "AUSTRIA": "AUSTRIA",
+    "PORTUGAL": "PORTUGAL",
+    "IRELAND": "IRLANDA",
+    "SWEDEN": "SUECIA",
+    "NORWAY": "NORUEGA",
+    "DENMARK": "DINAMARCA",
+    "FINLAND": "FINLANDIA",
+    "ICELAND": "ISLANDIA",
+    "MONACO": "MÓNACO",
+    "LIECHTENSTEIN": "LIECHTENSTEIN",
+    "ANDORRA": "ANDORRA",
+    "MALTA": "MALTA",
+    "CYPRUS": "CHIPRE",
+    # Europa Oriental y Central
+    "POLAND": "POLONIA",
+    "CZECH REPUBLIC": "REPÚBLICA CHECA",
+    "CZECHIA": "REPÚBLICA CHECA",
+    "SLOVAKIA": "ESLOVAQUIA",
+    "HUNGARY": "HUNGRÍA",
+    "ROMANIA": "RUMANIA",
+    "BULGARIA": "BULGARIA",
+    "CROATIA": "CROACIA",
+    "SLOVENIA": "ESLOVENIA",
+    "SERBIA": "SERBIA",
+    "BOSNIA AND HERZEGOVINA": "BOSNIA Y HERZEGOVINA",
+    "MONTENEGRO": "MONTENEGRO",
+    "NORTH MACEDONIA": "MACEDONIA DEL NORTE",
+    "ALBANIA": "ALBANIA",
+    "GREECE": "GRECIA",
+    "ESTONIA": "ESTONIA",
+    "LATVIA": "LETONIA",
+    "LITHUANIA": "LITUANIA",
+    "UKRAINE": "UCRANIA",
+    "BELARUS": "BIELORRUSIA",
+    "MOLDOVA": "MOLDAVIA",
+    "RUSSIA": "RUSIA",
+    "RUSSIAN FEDERATION": "RUSIA",
+    "GEORGIA": "GEORGIA",
+    "ARMENIA": "ARMENIA",
+    "AZERBAIJAN": "AZERBAIYÁN",
+    "KOSOVO": "KOSOVO",
+    # Asia Oriental
+    "CHINA": "CHINA",
+    "JAPAN": "JAPÓN",
+    "SOUTH KOREA": "COREA DEL SUR",
+    "KOREA": "COREA DEL SUR",
+    "REPUBLIC OF KOREA": "COREA DEL SUR",
+    "NORTH KOREA": "COREA DEL NORTE",
+    "TAIWAN": "TAIWÁN",
+    "HONG KONG": "HONG KONG",
+    "MACAO": "MACAO",
+    "MONGOLIA": "MONGOLIA",
+    # Asia Sudoriental
+    "VIETNAM": "VIETNAM",
+    "THAILAND": "TAILANDIA",
+    "MALAYSIA": "MALASIA",
+    "SINGAPORE": "SINGAPUR",
+    "INDONESIA": "INDONESIA",
+    "PHILIPPINES": "FILIPINAS",
+    "MYANMAR": "MYANMAR",
+    "CAMBODIA": "CAMBOYA",
+    "LAOS": "LAOS",
+    "BRUNEI": "BRUNÉI",
+    "TIMOR-LESTE": "TIMOR ORIENTAL",
+    # Asia del Sur
+    "INDIA": "INDIA",
+    "PAKISTAN": "PAKISTÁN",
+    "BANGLADESH": "BANGLADÉS",
+    "SRI LANKA": "SRI LANKA",
+    "NEPAL": "NEPAL",
+    "BHUTAN": "BUTÁN",
+    "MALDIVES": "MALDIVAS",
+    "AFGHANISTAN": "AFGANISTÁN",
+    # Asia Central
+    "KAZAKHSTAN": "KAZAJISTÁN",
+    "UZBEKISTAN": "UZBEKISTÁN",
+    "TURKMENISTAN": "TURKMENISTÁN",
+    "KYRGYZSTAN": "KIRGUISTÁN",
+    "TAJIKISTAN": "TAYIKISTÁN",
+    # Medio Oriente
+    "TURKEY": "TURQUÍA",
+    "TURKIYE": "TURQUÍA",
+    "ISRAEL": "ISRAEL",
+    "SAUDI ARABIA": "ARABIA SAUDITA",
+    "UNITED ARAB EMIRATES": "EMIRATOS ÁRABES UNIDOS",
+    "UAE": "EMIRATOS ÁRABES UNIDOS",
+    "QATAR": "CATAR",
+    "KUWAIT": "KUWAIT",
+    "BAHRAIN": "BARÉIN",
+    "OMAN": "OMÁN",
+    "JORDAN": "JORDANIA",
+    "LEBANON": "LÍBANO",
+    "SYRIA": "SIRIA",
+    "IRAQ": "IRAK",
+    "IRAN": "IRÁN",
+    "YEMEN": "YEMEN",
+    # África del Norte
+    "EGYPT": "EGIPTO",
+    "LIBYA": "LIBIA",
+    "TUNISIA": "TÚNEZ",
+    "ALGERIA": "ARGELIA",
+    "MOROCCO": "MARRUECOS",
+    "SUDAN": "SUDÁN",
+    # África Subsahariana
+    "SOUTH AFRICA": "SUDÁFRICA",
+    "NIGERIA": "NIGERIA",
+    "KENYA": "KENYA",
+    "ETHIOPIA": "ETIOPÍA",
+    "GHANA": "GHANA",
+    "TANZANIA": "TANZANIA",
+    "MOZAMBIQUE": "MOZAMBIQUE",
+    "ZAMBIA": "ZAMBIA",
+    "ZIMBABWE": "ZIMBABUE",
+    "ANGOLA": "ANGOLA",
+    "DEMOCRATIC REPUBLIC OF THE CONGO": "REPÚBLICA DEMOCRÁTICA DEL CONGO",
+    "DRC": "REPÚBLICA DEMOCRÁTICA DEL CONGO",
+    "CONGO": "CONGO",
+    "CAMEROON": "CAMERÚN",
+    "IVORY COAST": "COSTA DE MARFIL",
+    "SENEGAL": "SENEGAL",
+    "MALI": "MALÍ",
+    "BURKINA FASO": "BURKINA FASO",
+    "NIGER": "NÍGER",
+    "CHAD": "CHAD",
+    "SOMALIA": "SOMALIA",
+    "UGANDA": "UGANDA",
+    "RWANDA": "RUANDA",
+    "BOTSWANA": "BOTSUANA",
+    "NAMIBIA": "NAMIBIA",
+    "MADAGASCAR": "MADAGASCAR",
+    # Oceanía
+    "AUSTRALIA": "AUSTRALIA",
+    "NEW ZEALAND": "NUEVA ZELANDA",
+    "PAPUA NEW GUINEA": "PAPÚA NUEVA GUINEA",
+    "FIJI": "FIYI",
+    "SOLOMON ISLANDS": "ISLAS SALOMÓN",
+    "VANUATU": "VANUATU",
+    "SAMOA": "SAMOA",
+    "TONGA": "TONGA",
+    "KIRIBATI": "KIRIBATI",
+    "NEW CALEDONIA": "NUEVA CALEDONIA",
 }
+
 UNIDAD_MAP = {'07 - UNIDAD': 'UNIDAD', '01 - KILOGRAMO': 'KILOGRAMO', '06 - METRO': 'METRO', '10 - LITRO': 'LITRO'}
 COLUMNAS = [
     'ID','InscRUMP','ActiServ','NroInsc','RazonSocial','CUIT','ImpDirecta','CondMerca',
@@ -64,8 +250,11 @@ def safe_float(v):
 def norm_pn(pn):
     return str(pn).strip().lstrip('0')
 
-def traducir_pais(p):
-    return PAIS_MAP.get(str(p).strip().upper(), str(p).strip().upper())
+def traducir_pais(raw, traducciones_extra=None):
+    r = str(raw).strip().upper()
+    if traducciones_extra and r in traducciones_extra:
+        return traducciones_extra[r]
+    return TRADUCCION_ORIGEN.get(r, r)
 
 def parsear_equipo(eq):
     if not eq or str(eq).strip() in ('', 'nan'): return '', 'CAT', ''
@@ -119,7 +308,6 @@ def generar_excel_bytes(filas):
     buf = io.BytesIO(); wb.save(buf); buf.seek(0); return buf.getvalue()
 
 def construir_filas_excluidos(excluidos, inv, rs, cuit_val, cond_merca):
-    """Construye filas para ítems excluidos — solo para el template unificado."""
     filas = []
     for f in excluidos:
         p = f['proy']
@@ -224,6 +412,13 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
     df_sub['NCM10'] = df_sub['NCM'].astype(str).str[:10]
     df_sub['PCT_DERECHOS'] = df_sub['ITEM'].map(derechos_dict).fillna(0)
 
+    # Detectar orígenes sin traducción
+    col_origen = 'PART_ORIGIN' if 'PART_ORIGIN' in df_madre.columns else None
+    sin_traduccion = []
+    if col_origen:
+        origenes_raw = df_madre[col_origen].dropna().astype(str).str.strip().str.upper().unique()
+        sin_traduccion = sorted([o for o in origenes_raw if o and o != 'NAN' and o not in TRADUCCION_ORIGEN])
+
     facturas = defaultdict(list)
     for _, row in df_madre.iterrows():
         inv = str(row.get('INVOICE_NUMBER', '')).strip()
@@ -253,7 +448,7 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
                 ncm = str(sub_row.get('NCM', '')).strip()
                 ncm10 = ncm[:10]
                 pct_der = float(sub_row.get('PCT_DERECHOS', 0))
-                pn_di = str(sub_row.get('MODELO', pn)).strip()  # part number oficial del DI
+                pn_di = str(sub_row.get('MODELO', pn)).strip()
                 try:
                     qty_f = float(qty_str)
                     valor_unit = round(fob_final / qty_f, 2) if qty_f else fob_final
@@ -273,13 +468,16 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
             try: qty_int = int(float(qty_str)) if qty_str and qty_str != 'nan' else None
             except: qty_int = qty_str
 
+            # Guardamos el raw para traducir luego con las manuales
+            origen_raw = str(item.get('PART_ORIGIN', '')).strip().upper() if col_origen else ''
+
             items_proc.append({
                 'pn': pn_di, 'qty_int': qty_int, 'fob_final': fob_final, 'ncm': ncm, 'ncm10': ncm10,
                 'pct_der': pct_der, 'derecho': round((fob_final or 0) * pct_der / 100, 2),
                 'valor_unit': valor_unit, 'valor_total': valor_total, 'unidad': unidad,
                 'tipo_maq': tipo_maq, 'marca_maq': marca_maq, 'modelo_maq': modelo_maq,
                 'descripcion': descripcion, 'proy': proy,
-                'origen': traducir_pais(str(item.get('PART_ORIGIN', '')).strip()),
+                'origen_raw': origen_raw, 'origen': origen_raw,  # se sobreescribe al confirmar
                 'item_di': item_di, 'estado_match': estado,
                 'incluir': incluir, 'motivo': motivo, 'desc_ok': desc_ok,
             })
@@ -295,7 +493,18 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
 
         preview[inv] = {'items_proc': items_proc, 'excluidos': excluidos, 'grupos': grupos_info}
 
-    return preview, rs, cuit_val
+    return preview, rs, cuit_val, sin_traduccion
+
+def aplicar_traducciones(preview, traducciones_extra):
+    """Aplica traducciones a todos los ítems (válidos, excluidos y grupos)."""
+    for inv, data in preview.items():
+        for item in data['items_proc']:
+            item['origen'] = traducir_pais(item['origen_raw'], traducciones_extra)
+        for g in data['grupos']:
+            for item in g['items']:
+                item['origen'] = traducir_pais(item['origen_raw'], traducciones_extra)
+        for item in data['excluidos']:
+            item['origen'] = traducir_pais(item['origen_raw'], traducciones_extra)
 
 # ── UI ────────────────────────────────────────────────────────────────────────
 st.title("📋 Template CM")
@@ -336,10 +545,14 @@ if not nro_ref:
 if st.button("🔍 ANALIZAR OPERACIÓN", disabled=not todos_cargados, use_container_width=True):
     with st.spinner("Analizando..."):
         try:
-            preview, rs, cuit_val = procesar(f_madre, f_despacho, f_equipos, f_descripciones, cond_merca)
-            st.session_state.update({'preview': preview, 'rs': rs, 'cuit_val': cuit_val,
-                                     'cond_merca': cond_merca, 'nro_ref': nro_ref,
-                                     'analizado': True, 'confirmado': False})
+            preview, rs, cuit_val, sin_traduccion = procesar(f_madre, f_despacho, f_equipos, f_descripciones, cond_merca)
+            st.session_state.update({
+                'preview': preview, 'rs': rs, 'cuit_val': cuit_val,
+                'cond_merca': cond_merca, 'nro_ref': nro_ref,
+                'analizado': True, 'confirmado': False,
+                'sin_traduccion': sin_traduccion,
+                'traducciones_manuales': {},
+            })
         except Exception as e:
             st.error(f"Error: {e}")
             import traceback; st.code(traceback.format_exc())
@@ -347,6 +560,25 @@ if st.button("🔍 ANALIZAR OPERACIÓN", disabled=not todos_cargados, use_contai
 if st.session_state.get('analizado'):
     preview = st.session_state['preview']
     nro = st.session_state['nro_ref']
+    sin_traduccion = st.session_state.get('sin_traduccion', [])
+
+    # ── Bloque de traducciones manuales ──────────────────────────────────────
+    if sin_traduccion:
+        st.markdown("### 🌐 Orígenes sin traducción detectados")
+        st.warning(f"⚠️ Se encontraron {len(sin_traduccion)} origen(es) no reconocido(s). Completá la traducción al español antes de generar.")
+        traducciones_manuales = {}
+        cols_trad = st.columns(min(len(sin_traduccion), 3))
+        for i, origen in enumerate(sin_traduccion):
+            with cols_trad[i % 3]:
+                val = st.text_input(
+                    f"🌍 {origen}",
+                    key=f"trad_{origen}",
+                    placeholder="Ej: SUIZA",
+                ).strip().upper()
+                traducciones_manuales[origen] = val
+        st.session_state['traducciones_manuales'] = traducciones_manuales
+        st.markdown("---")
+
     st.markdown("### 🔎 Revisión previa — Confirmá antes de generar")
 
     for inv, data in preview.items():
@@ -363,6 +595,7 @@ if st.session_state.get('analizado'):
         if sin_desc:
             rows_desc = ''.join([f"<div>⚠️ PN <b>{i['pn']}</b> — descripción no encontrada en Excel Descripciones</div>" for i in sin_desc])
             st.markdown(f'<div class="excluido-box"><div class="excluido-title">⚠️ Descripciones faltantes:</div>{rows_desc}</div>', unsafe_allow_html=True)
+
         for g in grupos:
             nombre = f"TEMPLATE_{nro}_{inv}{g['sufijo']}.xlsx"
             if g['genera']:
@@ -371,7 +604,14 @@ if st.session_state.get('analizado'):
                 st.markdown(f'<div class="no-genera-box">❌ {nombre} NO SE GENERA — {len(g["items"])} ítems | Derechos: USD {g["total_der"]} (menor a USD 50)</div>', unsafe_allow_html=True)
 
     st.markdown("---")
-    if st.button("✅ CONFIRMAR Y GENERAR TEMPLATES", use_container_width=True):
+
+    # Bloquear el botón si hay traducciones pendientes
+    traducciones_incompletas = [o for o, v in st.session_state.get('traducciones_manuales', {}).items() if not v]
+    if traducciones_incompletas:
+        st.warning(f"⚠️ Completá la traducción de: **{', '.join(traducciones_incompletas)}** para poder generar.")
+
+    puede_confirmar = not traducciones_incompletas
+    if st.button("✅ CONFIRMAR Y GENERAR TEMPLATES", use_container_width=True, disabled=not puede_confirmar):
         st.session_state['confirmado'] = True
 
 if st.session_state.get('confirmado'):
@@ -380,6 +620,10 @@ if st.session_state.get('confirmado'):
     cuit_val = st.session_state['cuit_val']
     cond_merca = st.session_state['cond_merca']
     nro = st.session_state['nro_ref']
+    traducciones_extra = st.session_state.get('traducciones_manuales', {})
+
+    # Aplicar todas las traducciones antes de generar
+    aplicar_traducciones(preview, traducciones_extra)
 
     excel_bytes = {}
     alertas = []
@@ -422,7 +666,6 @@ if st.session_state.get('confirmado'):
         for g in data['grupos']:
             if g['genera']:
                 todas.extend(construir_filas(g['items'], inv, rs, cuit_val, cond_merca))
-        # Agregar excluidos al final de cada factura con SIN CM
         todas.extend(construir_filas_excluidos(data['excluidos'], inv, rs, cuit_val, cond_merca))
     if todas:
         st.download_button(label=f"📊 DESCARGAR TEMPLATE UNIFICADO — Operación {nro}",
