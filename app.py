@@ -557,7 +557,7 @@ if st.button("🔍 ANALIZAR OPERACIÓN", disabled=not todos_cargados, use_contai
             st.error(f"Error: {e}")
             import traceback; st.code(traceback.format_exc())
 
-if st.session_state.get('analizado'):
+if st.session_state.get('analizado') and 'nro_ref' in st.session_state:
     preview = st.session_state['preview']
     nro = st.session_state['nro_ref']
     sin_traduccion = st.session_state.get('sin_traduccion', [])
@@ -614,7 +614,7 @@ if st.session_state.get('analizado'):
     if st.button("✅ CONFIRMAR Y GENERAR TEMPLATES", use_container_width=True, disabled=not puede_confirmar):
         st.session_state['confirmado'] = True
 
-if st.session_state.get('confirmado'):
+if st.session_state.get('confirmado') and 'nro_ref' in st.session_state:
     preview = st.session_state['preview']
     rs = st.session_state['rs']
     cuit_val = st.session_state['cuit_val']
