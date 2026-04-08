@@ -247,6 +247,20 @@ def safe_float(v):
         f = float(v); return 0.0 if math.isnan(f) else f
     except: return 0.0
 
+def find_col(df, *kw_groups):
+    """Encuentra columna cuyo nombre contenga todas las keywords del grupo (case insensitive).
+    Acepta múltiples grupos, retorna el primero que matchea. Si no encuentra, retorna None.
+    Ej: find_col(df, ['PART','NUM'], ['PART','NUMBER'], 'PARTNUMBER')
+    """
+    for kw_group in kw_groups:
+        if isinstance(kw_group, str):
+            kw_group = [kw_group]
+        for col in df.columns:
+            col_up = col.upper().strip().replace(' ', '').replace('_', '')
+            if all(kw.upper().replace(' ', '').replace('_', '') in col_up for kw in kw_group):
+                return col
+    return None
+
 def norm_pn(pn):
     return str(pn).strip().lstrip('0')
 
@@ -267,14 +281,16 @@ def parsear_equipo(eq):
             return ' '.join(tokens[:i]).strip(), 'CAT', ' '.join(tokens[i+1:]).strip()
     return (' '.join(tokens[:-1]).strip(), 'CAT', tokens[-1].strip()) if len(tokens) > 1 else (eq, 'CAT', '')
 
-def calcular_fobs(items):
-    total_ext = sum(safe_float(i.get('EXTENDED_PRICE')) for i in items)
+def calcular_fobs(items, col_ext='EXTENDED_PRICE', col_spk='SPECIAL PACKING',
+                  col_frt='FREIGHT_CHARGE', col_bofrt='BO_FREIGHT_CHARGE',
+                  col_emerg='EMERGENCY_FILL_CHARGE_VAL'):
+    total_ext = sum(safe_float(i.get(col_ext)) for i in items)
     total_gastos = sum(
-        safe_float(i.get('SPECIAL PACKING')) + safe_float(i.get('FREIGHT_CHARGE')) +
-        safe_float(i.get('BO_FREIGHT_CHARGE')) + safe_float(i.get('EMERGENCY_FILL_CHARGE_VAL'))
+        safe_float(i.get(col_spk)) + safe_float(i.get(col_frt)) +
+        safe_float(i.get(col_bofrt)) + safe_float(i.get(col_emerg))
         for i in items
     )
-    return [round(safe_float(i.get('EXTENDED_PRICE')) + (safe_float(i.get('EXTENDED_PRICE')) * total_gastos / total_ext if total_ext else 0), 2) for i in items]
+    return [round(safe_float(i.get(col_ext)) + (safe_float(i.get(col_ext)) * total_gastos / total_ext if total_ext else 0), 2) for i in items]
 
 def match_subitem(pn, qty, fob_calc, df_sub, usados):
     pn_n = norm_pn(pn)
@@ -371,7 +387,16 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
     df_sub = pd.read_excel(f_despacho, sheet_name='Subitem', dtype=str)
     df_liq = pd.read_excel(f_despacho, sheet_name='Liquidación ítem', dtype=str)
     xl_eq = pd.ExcelFile(f_equipos)
-    df_eq = pd.read_excel(f_equipos, sheet_name='data' if 'data' in xl_eq.sheet_names else xl_eq.sheet_names[0], dtype=str)
+    # Detectar automáticamente la solapa que tenga columnas de part number y equipo
+    sheet_eq = xl_eq.sheet_names[0]
+    for sh in xl_eq.sheet_names:
+        cols_sh = pd.read_excel(f_equipos, sheet_name=sh, nrows=1, dtype=str).columns.str.strip().tolist()
+        cols_up = [c.upper() for c in cols_sh]
+        if any('PART' in c for c in cols_up) and any('EQUIP' in c for c in cols_up):
+            sheet_eq = sh; break
+        if sh.lower() == 'data':
+            sheet_eq = sh; break
+    df_eq = pd.read_excel(f_equipos, sheet_name=sheet_eq, dtype=str)
     xl_desc = pd.ExcelFile(f_desc)
     sheet_desc = xl_desc.sheet_names[0]
     for sh in xl_desc.sheet_names:
@@ -395,12 +420,12 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
     except: cuit_val = str(rs['CUIT'])
     proyectos = {str(r['CUST_CD']).strip(): r.to_dict() for _, r in df_proy.iterrows()}
 
-    eq_col_pn = 'Part number' if 'Part number' in df_eq.columns else df_eq.columns[0]
-    eq_col_eq = 'Equipos' if 'Equipos' in df_eq.columns else df_eq.columns[-1]
+    eq_col_pn = find_col(df_eq, ['PART', 'NUM']) or df_eq.columns[0]
+    eq_col_eq = find_col(df_eq, ['EQUIP']) or df_eq.columns[-1]
     equipos = {norm_pn(str(r[eq_col_pn])): (str(r[eq_col_eq]).strip() if pd.notna(r[eq_col_eq]) else '') for _, r in df_eq.iterrows()}
 
-    desc_col_pn = 'PART_NUMBER' if 'PART_NUMBER' in df_desc_df.columns else df_desc_df.columns[0]
-    desc_col_d = 'DESCRIPCION' if 'DESCRIPCION' in df_desc_df.columns else df_desc_df.columns[-1]
+    desc_col_pn = find_col(df_desc_df, ['PART', 'NUM']) or df_desc_df.columns[0]
+    desc_col_d = find_col(df_desc_df, ['DESCRIP']) or df_desc_df.columns[-1]
     descs = {norm_pn(str(r[desc_col_pn])): (str(r[desc_col_d]).strip() if pd.notna(r[desc_col_d]) else '') for _, r in df_desc_df.iterrows()}
 
     derechos_liq = df_liq[df_liq['CONCEPTO'].str.contains('010', na=False)][['ITEM','PORCENTAJE']].copy()
@@ -413,15 +438,26 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
     df_sub['PCT_DERECHOS'] = df_sub['ITEM'].map(derechos_dict).fillna(0)
 
     # Detectar orígenes sin traducción
-    col_origen = 'PART_ORIGIN' if 'PART_ORIGIN' in df_madre.columns else None
+    col_origen = find_col(df_madre, ['ORIGIN'], ['ORIGEN'])
     sin_traduccion = []
     if col_origen:
         origenes_raw = df_madre[col_origen].dropna().astype(str).str.strip().str.upper().unique()
         sin_traduccion = sorted([o for o in origenes_raw if o and o != 'NAN' and o not in TRADUCCION_ORIGEN])
 
+    # Precalcular nombres de columnas del FACAERO una sola vez
+    col_inv    = find_col(df_madre, ['INVOICE', 'NUM']) or 'INVOICE_NUMBER'
+    col_pn     = find_col(df_madre, ['PART', 'NUM']) or 'PART_NUMBER'
+    col_qty    = find_col(df_madre, ['QTY'], ['QUANTITY'], ['CANT']) or 'QTY'
+    col_cust   = find_col(df_madre, ['CUST', 'CD'], ['CUSTOMER', 'CD']) or 'CUST_CD'
+    col_ext    = find_col(df_madre, ['EXTENDED', 'PRICE'], ['EXT', 'PRICE']) or 'EXTENDED_PRICE'
+    col_spk    = find_col(df_madre, ['SPECIAL', 'PACK']) or 'SPECIAL PACKING'
+    col_frt    = find_col(df_madre, ['FREIGHT', 'CHARGE']) or 'FREIGHT_CHARGE'
+    col_bofrt  = find_col(df_madre, ['BO', 'FREIGHT']) or 'BO_FREIGHT_CHARGE'
+    col_emerg  = find_col(df_madre, ['EMERGENCY']) or 'EMERGENCY_FILL_CHARGE_VAL'
+
     facturas = defaultdict(list)
     for _, row in df_madre.iterrows():
-        inv = str(row.get('INVOICE_NUMBER', '')).strip()
+        inv = str(row.get(col_inv, '')).strip()
         if inv and inv != 'nan':
             facturas[inv].append(row.to_dict())
 
@@ -429,14 +465,14 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
     usados_global = set()
 
     for inv, items in facturas.items():
-        fobs_calc = calcular_fobs(items)
+        fobs_calc = calcular_fobs(items, col_ext, col_spk, col_frt, col_bofrt, col_emerg)
         items_proc = []
 
         for item, fob_calc in zip(items, fobs_calc):
-            pn = str(item.get('PART_NUMBER', '')).strip()
+            pn = str(item.get(col_pn, '')).strip()
             pn_n = norm_pn(pn)
-            qty_str = str(item.get('QTY', '')).strip()
-            cust_cd = str(item.get('CUST_CD', '')).strip()
+            qty_str = str(item.get(col_qty, '')).strip()
+            cust_cd = str(item.get(col_cust, '')).strip()
 
             sub_row, item_di, estado = match_subitem(pn, qty_str, fob_calc, df_sub, usados_global)
 
@@ -469,7 +505,7 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
             except: qty_int = qty_str
 
             # Guardamos el raw para traducir luego con las manuales
-            origen_raw = str(item.get('PART_ORIGIN', '')).strip().upper() if col_origen else ''
+            origen_raw = str(item.get(col_origen, '')).strip().upper() if col_origen else ''
 
             items_proc.append({
                 'pn': pn_di, 'qty_int': qty_int, 'fob_final': fob_final, 'ncm': ncm, 'ncm10': ncm10,
