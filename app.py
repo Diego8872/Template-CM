@@ -390,19 +390,23 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
     # Detectar automáticamente la solapa que tenga columnas de part number y equipo
     sheet_eq = xl_eq.sheet_names[0]
     for sh in xl_eq.sheet_names:
-        cols_sh = pd.read_excel(f_equipos, sheet_name=sh, nrows=1, dtype=str).columns.str.strip().tolist()
-        cols_up = [c.upper() for c in cols_sh]
-        if any('PART' in c for c in cols_up) and any('EQUIP' in c for c in cols_up):
-            sheet_eq = sh; break
-        if sh.lower() == 'data':
-            sheet_eq = sh; break
+        try:
+            cols_sh = [str(c).strip() for c in pd.read_excel(f_equipos, sheet_name=sh, nrows=1, dtype=str).columns]
+            cols_up = [c.upper() for c in cols_sh]
+            if any('PART' in c for c in cols_up) and any('EQUIP' in c for c in cols_up):
+                sheet_eq = sh; break
+            if sh.lower() == 'data':
+                sheet_eq = sh; break
+        except: pass
     df_eq = pd.read_excel(f_equipos, sheet_name=sheet_eq, dtype=str)
     xl_desc = pd.ExcelFile(f_desc)
     sheet_desc = xl_desc.sheet_names[0]
     for sh in xl_desc.sheet_names:
-        cols = pd.read_excel(f_desc, sheet_name=sh, nrows=1, dtype=str).columns.str.strip().tolist()
-        if 'PART_NUMBER' in cols:
-            sheet_desc = sh; break
+        try:
+            cols = [str(c).strip().upper() for c in pd.read_excel(f_desc, sheet_name=sh, nrows=1, dtype=str).columns]
+            if any('PART' in c and 'NUM' in c for c in cols):
+                sheet_desc = sh; break
+        except: pass
     df_desc_df = pd.read_excel(f_desc, sheet_name=sheet_desc, dtype=str)
     df_razon = pd.read_excel(ARCHIVOS_FIJOS['razon'], dtype=str)
     df_ncm = pd.read_excel(ARCHIVOS_FIJOS['ncm'], dtype=str)
