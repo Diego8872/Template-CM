@@ -289,14 +289,18 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
     desc_col_d = find_col(df_desc_df, ['DESCRIP']) or df_desc_df.columns[-1]
     descs = {norm_pn(str(r[desc_col_pn])): (str(r[desc_col_d]).strip() if pd.notna(r[desc_col_d]) else '') for _, r in df_desc_df.iterrows()}
 
-    derechos_liq = df_liq[df_liq['CONCEPTO'].str.contains('010', na=False)][['ITEM','PORCENTAJE']].copy()
+    derechos_liq = df_liq[df_liq['CONCEPTO'].str.contains('010|056', na=False)][['ITEM','PORCENTAJE']].copy()
     derechos_liq['PORCENTAJE'] = pd.to_numeric(derechos_liq['PORCENTAJE'], errors='coerce').fillna(0)
-    derechos_dict = dict(zip(derechos_liq['ITEM'], derechos_liq['PORCENTAJE']))
+    # Normalizar ITEM quitando ceros a la izquierda para el join
+    derechos_liq['ITEM_NORM'] = derechos_liq['ITEM'].astype(str).str.lstrip('0')
+    derechos_dict = dict(zip(derechos_liq['ITEM_NORM'], derechos_liq['PORCENTAJE']))
 
     df_sub = df_sub.dropna(subset=['MODELO'])
     df_sub['MODELO_NORM'] = df_sub['MODELO'].astype(str).apply(norm_pn)
     df_sub['NCM10'] = df_sub['NCM'].astype(str).str[:10]
-    df_sub['PCT_DERECHOS'] = df_sub['ITEM'].map(derechos_dict).fillna(0)
+    # Normalizar ITEM en subitem también antes de mapear
+    df_sub['ITEM_NORM'] = df_sub['ITEM'].astype(str).str.lstrip('0')
+    df_sub['PCT_DERECHOS'] = df_sub['ITEM_NORM'].map(derechos_dict).fillna(0)
 
     col_origen = find_col(df_madre, ['ORIGIN'], ['ORIGEN'])
     sin_traduccion = []
