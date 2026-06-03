@@ -152,9 +152,7 @@ def calcular_fobs(items, col_ext='EXTENDED_PRICE', col_spk='SPECIAL PACKING',
 
 def match_subitem(pn, qty, fob_calc, df_sub, usados):
     pn_n = norm_pn(pn)
-    try: qty_val = float(qty)
-    except: return None, None, 'sin_match'
-    mask = (df_sub['MODELO_NORM'] == pn_n) & (df_sub['CANTIDAD'].astype(float) == qty_val)
+    mask = (df_sub['MODELO_NORM'] == pn_n)
     disp = df_sub[mask & ~df_sub.index.isin(usados)].copy()
     if disp.empty: return None, None, 'sin_match'
     m = disp[(disp['MONTO FOB'].astype(float) - fob_calc).abs() <= 0.02]
