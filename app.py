@@ -33,58 +33,200 @@ st.markdown("""
 ARCHIVOS_FIJOS = {'razon': 'RAZON_SOCIAL_FSM.xlsx', 'proyectos': 'PROYECTOS.xlsx', 'ncm': 'NCM_LEY_MINERA.xlsx'}
 
 TRADUCCION_ORIGEN = {
-    "USA": "ESTADOS UNIDOS", "UNITED STATES": "ESTADOS UNIDOS", "UNITED STATES OF AMERICA": "ESTADOS UNIDOS",
-    "MEXICO": "MÉXICO", "CANADA": "CANADÁ", "GUATEMALA": "GUATEMALA", "BELIZE": "BELICE",
-    "HONDURAS": "HONDURAS", "EL SALVADOR": "EL SALVADOR", "NICARAGUA": "NICARAGUA",
-    "COSTA RICA": "COSTA RICA", "PANAMA": "PANAMÁ", "CUBA": "CUBA", "HAITI": "HAITÍ",
-    "DOMINICAN REPUBLIC": "REPÚBLICA DOMINICANA", "PUERTO RICO": "PUERTO RICO", "JAMAICA": "JAMAICA",
-    "TRINIDAD AND TOBAGO": "TRINIDAD Y TOBAGO", "BARBADOS": "BARBADOS", "BRAZIL": "BRASIL",
-    "ARGENTINA": "ARGENTINA", "CHILE": "CHILE", "PERU": "PERÚ", "COLOMBIA": "COLOMBIA",
-    "VENEZUELA": "VENEZUELA", "ECUADOR": "ECUADOR", "BOLIVIA": "BOLIVIA", "PARAGUAY": "PARAGUAY",
-    "URUGUAY": "URUGUAY", "GUYANA": "GUYANA", "SURINAME": "SURINAM", "FRENCH GUIANA": "GUAYANA FRANCESA",
-    "GERMANY": "ALEMANIA", "ITALY": "ITALIA", "FRANCE": "FRANCIA", "SPAIN": "ESPAÑA",
-    "UNITED KINGDOM": "REINO UNIDO", "UK": "REINO UNIDO", "GREAT BRITAIN": "REINO UNIDO",
-    "ENGLAND": "REINO UNIDO", "BELGIUM": "BÉLGICA", "NETHERLANDS": "PAÍSES BAJOS",
-    "HOLLAND": "PAÍSES BAJOS", "LUXEMBOURG": "LUXEMBURGO", "SWITZERLAND": "SUIZA",
-    "AUSTRIA": "AUSTRIA", "PORTUGAL": "PORTUGAL", "IRELAND": "IRLANDA", "SWEDEN": "SUECIA",
-    "NORWAY": "NORUEGA", "DENMARK": "DINAMARCA", "FINLAND": "FINLANDIA", "ICELAND": "ISLANDIA",
-    "MONACO": "MÓNACO", "LIECHTENSTEIN": "LIECHTENSTEIN", "ANDORRA": "ANDORRA", "MALTA": "MALTA",
-    "CYPRUS": "CHIPRE", "POLAND": "POLONIA", "CZECH REPUBLIC": "REPÚBLICA CHECA",
-    "CZECHIA": "REPÚBLICA CHECA", "SLOVAKIA": "ESLOVAQUIA", "HUNGARY": "HUNGRÍA",
-    "ROMANIA": "RUMANIA", "BULGARIA": "BULGARIA", "CROATIA": "CROACIA", "SLOVENIA": "ESLOVENIA",
-    "SERBIA": "SERBIA", "BOSNIA AND HERZEGOVINA": "BOSNIA Y HERZEGOVINA", "MONTENEGRO": "MONTENEGRO",
-    "NORTH MACEDONIA": "MACEDONIA DEL NORTE", "ALBANIA": "ALBANIA", "GREECE": "GRECIA",
-    "ESTONIA": "ESTONIA", "LATVIA": "LETONIA", "LITHUANIA": "LITUANIA", "UKRAINE": "UCRANIA",
-    "BELARUS": "BIELORRUSIA", "MOLDOVA": "MOLDAVIA", "RUSSIA": "RUSIA",
-    "RUSSIAN FEDERATION": "RUSIA", "GEORGIA": "GEORGIA", "ARMENIA": "ARMENIA",
-    "AZERBAIJAN": "AZERBAIYÁN", "KOSOVO": "KOSOVO", "CHINA": "CHINA", "JAPAN": "JAPÓN",
-    "SOUTH KOREA": "COREA DEL SUR", "KOREA": "COREA DEL SUR", "REPUBLIC OF KOREA": "COREA DEL SUR",
-    "NORTH KOREA": "COREA DEL NORTE", "TAIWAN": "TAIWÁN", "HONG KONG": "HONG KONG",
-    "MACAO": "MACAO", "MONGOLIA": "MONGOLIA", "VIETNAM": "VIETNAM", "THAILAND": "TAILANDIA",
-    "MALAYSIA": "MALASIA", "SINGAPORE": "SINGAPUR", "INDONESIA": "INDONESIA",
-    "PHILIPPINES": "FILIPINAS", "MYANMAR": "MYANMAR", "CAMBODIA": "CAMBOYA", "LAOS": "LAOS",
-    "BRUNEI": "BRUNÉI", "TIMOR-LESTE": "TIMOR ORIENTAL", "INDIA": "INDIA", "PAKISTAN": "PAKISTÁN",
-    "BANGLADESH": "BANGLADÉS", "SRI LANKA": "SRI LANKA", "NEPAL": "NEPAL", "BHUTAN": "BUTÁN",
-    "MALDIVES": "MALDIVAS", "AFGHANISTAN": "AFGANISTÁN", "KAZAKHSTAN": "KAZAJISTÁN",
-    "UZBEKISTAN": "UZBEKISTÁN", "TURKMENISTAN": "TURKMENISTÁN", "KYRGYZSTAN": "KIRGUISTÁN",
-    "TAJIKISTAN": "TAYIKISTÁN", "TURKEY": "TURQUÍA", "TURKIYE": "TURQUÍA", "ISRAEL": "ISRAEL",
-    "SAUDI ARABIA": "ARABIA SAUDITA", "UNITED ARAB EMIRATES": "EMIRATOS ÁRABES UNIDOS",
-    "UAE": "EMIRATOS ÁRABES UNIDOS", "QATAR": "CATAR", "KUWAIT": "KUWAIT", "BAHRAIN": "BARÉIN",
-    "OMAN": "OMÁN", "JORDAN": "JORDANIA", "LEBANON": "LÍBANO", "SYRIA": "SIRIA",
-    "IRAQ": "IRAK", "IRAN": "IRÁN", "YEMEN": "YEMEN", "EGYPT": "EGIPTO", "LIBYA": "LIBIA",
-    "TUNISIA": "TÚNEZ", "ALGERIA": "ARGELIA", "MOROCCO": "MARRUECOS", "SUDAN": "SUDÁN",
-    "SOUTH AFRICA": "SUDÁFRICA", "NIGERIA": "NIGERIA", "KENYA": "KENYA", "ETHIOPIA": "ETIOPÍA",
-    "GHANA": "GHANA", "TANZANIA": "TANZANIA", "MOZAMBIQUE": "MOZAMBIQUE", "ZAMBIA": "ZAMBIA",
-    "ZIMBABWE": "ZIMBABUE", "ANGOLA": "ANGOLA",
+    # América del Norte
+    "USA": "ESTADOS UNIDOS",
+    "UNITED STATES": "ESTADOS UNIDOS",
+    "UNITED STATES OF AMERICA": "ESTADOS UNIDOS",
+    "MEXICO": "MÉXICO",
+    "CANADA": "CANADÁ",
+    # América Central y Caribe
+    "GUATEMALA": "GUATEMALA",
+    "BELIZE": "BELICE",
+    "HONDURAS": "HONDURAS",
+    "EL SALVADOR": "EL SALVADOR",
+    "NICARAGUA": "NICARAGUA",
+    "COSTA RICA": "COSTA RICA",
+    "PANAMA": "PANAMÁ",
+    "CUBA": "CUBA",
+    "HAITI": "HAITÍ",
+    "DOMINICAN REPUBLIC": "REPÚBLICA DOMINICANA",
+    "PUERTO RICO": "PUERTO RICO",
+    "JAMAICA": "JAMAICA",
+    "TRINIDAD AND TOBAGO": "TRINIDAD Y TOBAGO",
+    "BARBADOS": "BARBADOS",
+    # América del Sur
+    "BRAZIL": "BRASIL",
+    "ARGENTINA": "ARGENTINA",
+    "ARGENTINE": "ARGENTINA",
+    "COLUMBIA": "COLOMBIA",
+    "LUXENBURGO": "LUXEMBURGO",
+    "LUXEMBURGO": "LUXEMBURGO",
+    "CHILE": "CHILE",
+    "PERU": "PERÚ",
+    "COLOMBIA": "COLOMBIA",
+    "VENEZUELA": "VENEZUELA",
+    "ECUADOR": "ECUADOR",
+    "BOLIVIA": "BOLIVIA",
+    "PARAGUAY": "PARAGUAY",
+    "URUGUAY": "URUGUAY",
+    "GUYANA": "GUYANA",
+    "SURINAME": "SURINAM",
+    "FRENCH GUIANA": "GUAYANA FRANCESA",
+    # Europa Occidental
+    "GERMANY": "ALEMANIA",
+    "ITALY": "ITALIA",
+    "FRANCE": "FRANCIA",
+    "SPAIN": "ESPAÑA",
+    "UNITED KINGDOM": "REINO UNIDO",
+    "UK": "REINO UNIDO",
+    "GREAT BRITAIN": "REINO UNIDO",
+    "ENGLAND": "REINO UNIDO",
+    "BELGIUM": "BÉLGICA",
+    "NETHERLANDS": "PAÍSES BAJOS",
+    "HOLLAND": "PAÍSES BAJOS",
+    "LUXEMBOURG": "LUXEMBURGO",
+    "SWITZERLAND": "SUIZA",
+    "AUSTRIA": "AUSTRIA",
+    "PORTUGAL": "PORTUGAL",
+    "IRELAND": "IRLANDA",
+    "SWEDEN": "SUECIA",
+    "NORWAY": "NORUEGA",
+    "DENMARK": "DINAMARCA",
+    "FINLAND": "FINLANDIA",
+    "ICELAND": "ISLANDIA",
+    "MONACO": "MÓNACO",
+    "LIECHTENSTEIN": "LIECHTENSTEIN",
+    "ANDORRA": "ANDORRA",
+    "MALTA": "MALTA",
+    "CYPRUS": "CHIPRE",
+    # Europa Oriental y Central
+    "POLAND": "POLONIA",
+    "CZECH REPUBLIC": "REPÚBLICA CHECA",
+    "CZECHIA": "REPÚBLICA CHECA",
+    "SLOVAKIA": "ESLOVAQUIA",
+    "HUNGARY": "HUNGRÍA",
+    "ROMANIA": "RUMANIA",
+    "BULGARIA": "BULGARIA",
+    "CROATIA": "CROACIA",
+    "SLOVENIA": "ESLOVENIA",
+    "SERBIA": "SERBIA",
+    "BOSNIA AND HERZEGOVINA": "BOSNIA Y HERZEGOVINA",
+    "MONTENEGRO": "MONTENEGRO",
+    "NORTH MACEDONIA": "MACEDONIA DEL NORTE",
+    "ALBANIA": "ALBANIA",
+    "GREECE": "GRECIA",
+    "ESTONIA": "ESTONIA",
+    "LATVIA": "LETONIA",
+    "LITHUANIA": "LITUANIA",
+    "UKRAINE": "UCRANIA",
+    "BELARUS": "BIELORRUSIA",
+    "MOLDOVA": "MOLDAVIA",
+    "RUSSIA": "RUSIA",
+    "RUSSIAN FEDERATION": "RUSIA",
+    "GEORGIA": "GEORGIA",
+    "ARMENIA": "ARMENIA",
+    "AZERBAIJAN": "AZERBAIYÁN",
+    "KOSOVO": "KOSOVO",
+    # Asia Oriental
+    "CHINA": "CHINA",
+    "JAPAN": "JAPÓN",
+    "SOUTH KOREA": "COREA DEL SUR",
+    "KOREA": "COREA DEL SUR",
+    "REPUBLIC OF KOREA": "COREA DEL SUR",
+    "NORTH KOREA": "COREA DEL NORTE",
+    "TAIWAN": "TAIWÁN",
+    "HONG KONG": "HONG KONG",
+    "MACAO": "MACAO",
+    "MONGOLIA": "MONGOLIA",
+    # Asia Sudoriental
+    "VIETNAM": "VIETNAM",
+    "THAILAND": "TAILANDIA",
+    "MALAYSIA": "MALASIA",
+    "SINGAPORE": "SINGAPUR",
+    "INDONESIA": "INDONESIA",
+    "PHILIPPINES": "FILIPINAS",
+    "MYANMAR": "MYANMAR",
+    "CAMBODIA": "CAMBOYA",
+    "LAOS": "LAOS",
+    "BRUNEI": "BRUNÉI",
+    "TIMOR-LESTE": "TIMOR ORIENTAL",
+    # Asia del Sur
+    "INDIA": "INDIA",
+    "PAKISTAN": "PAKISTÁN",
+    "BANGLADESH": "BANGLADÉS",
+    "SRI LANKA": "SRI LANKA",
+    "NEPAL": "NEPAL",
+    "BHUTAN": "BUTÁN",
+    "MALDIVES": "MALDIVAS",
+    "AFGHANISTAN": "AFGANISTÁN",
+    # Asia Central
+    "KAZAKHSTAN": "KAZAJISTÁN",
+    "UZBEKISTAN": "UZBEKISTÁN",
+    "TURKMENISTAN": "TURKMENISTÁN",
+    "KYRGYZSTAN": "KIRGUISTÁN",
+    "TAJIKISTAN": "TAYIKISTÁN",
+    # Medio Oriente
+    "TURKEY": "TURQUÍA",
+    "TURKIYE": "TURQUÍA",
+    "ISRAEL": "ISRAEL",
+    "SAUDI ARABIA": "ARABIA SAUDITA",
+    "UNITED ARAB EMIRATES": "EMIRATOS ÁRABES UNIDOS",
+    "UAE": "EMIRATOS ÁRABES UNIDOS",
+    "QATAR": "CATAR",
+    "KUWAIT": "KUWAIT",
+    "BAHRAIN": "BARÉIN",
+    "OMAN": "OMÁN",
+    "JORDAN": "JORDANIA",
+    "LEBANON": "LÍBANO",
+    "SYRIA": "SIRIA",
+    "IRAQ": "IRAK",
+    "IRAN": "IRÁN",
+    "YEMEN": "YEMEN",
+    # África del Norte
+    "EGYPT": "EGIPTO",
+    "LIBYA": "LIBIA",
+    "TUNISIA": "TÚNEZ",
+    "ALGERIA": "ARGELIA",
+    "MOROCCO": "MARRUECOS",
+    "SUDAN": "SUDÁN",
+    # África Subsahariana
+    "SOUTH AFRICA": "SUDÁFRICA",
+    "NIGERIA": "NIGERIA",
+    "KENYA": "KENYA",
+    "ETHIOPIA": "ETIOPÍA",
+    "GHANA": "GHANA",
+    "TANZANIA": "TANZANIA",
+    "MOZAMBIQUE": "MOZAMBIQUE",
+    "ZAMBIA": "ZAMBIA",
+    "ZIMBABWE": "ZIMBABUE",
+    "ANGOLA": "ANGOLA",
     "DEMOCRATIC REPUBLIC OF THE CONGO": "REPÚBLICA DEMOCRÁTICA DEL CONGO",
-    "DRC": "REPÚBLICA DEMOCRÁTICA DEL CONGO", "CONGO": "CONGO", "CAMEROON": "CAMERÚN",
-    "IVORY COAST": "COSTA DE MARFIL", "SENEGAL": "SENEGAL", "MALI": "MALÍ",
-    "BURKINA FASO": "BURKINA FASO", "NIGER": "NÍGER", "CHAD": "CHAD", "SOMALIA": "SOMALIA",
-    "UGANDA": "UGANDA", "RWANDA": "RUANDA", "BOTSWANA": "BOTSUANA", "NAMIBIA": "NAMIBIA",
-    "MADAGASCAR": "MADAGASCAR", "AUSTRALIA": "AUSTRALIA", "NEW ZEALAND": "NUEVA ZELANDA",
-    "PAPUA NEW GUINEA": "PAPÚA NUEVA GUINEA", "FIJI": "FIYI",
-    "SOLOMON ISLANDS": "ISLAS SALOMÓN", "VANUATU": "VANUATU", "SAMOA": "SAMOA",
-    "TONGA": "TONGA", "KIRIBATI": "KIRIBATI", "NEW CALEDONIA": "NUEVA CALEDONIA",
+    "DRC": "REPÚBLICA DEMOCRÁTICA DEL CONGO",
+    "CONGO": "CONGO",
+    "CAMEROON": "CAMERÚN",
+    "IVORY COAST": "COSTA DE MARFIL",
+    "SENEGAL": "SENEGAL",
+    "MALI": "MALÍ",
+    "BURKINA FASO": "BURKINA FASO",
+    "NIGER": "NÍGER",
+    "CHAD": "CHAD",
+    "SOMALIA": "SOMALIA",
+    "UGANDA": "UGANDA",
+    "RWANDA": "RUANDA",
+    "BOTSWANA": "BOTSUANA",
+    "NAMIBIA": "NAMIBIA",
+    "MADAGASCAR": "MADAGASCAR",
+    # Oceanía
+    "AUSTRALIA": "AUSTRALIA",
+    "NEW ZEALAND": "NUEVA ZELANDA",
+    "PAPUA NEW GUINEA": "PAPÚA NUEVA GUINEA",
+    "FIJI": "FIYI",
+    "SOLOMON ISLANDS": "ISLAS SALOMÓN",
+    "VANUATU": "VANUATU",
+    "SAMOA": "SAMOA",
+    "TONGA": "TONGA",
+    "KIRIBATI": "KIRIBATI",
+    "NEW CALEDONIA": "NUEVA CALEDONIA",
 }
 
 UNIDAD_MAP = {'07 - UNIDAD': 'UNIDAD', '01 - KILOGRAMO': 'KILOGRAMO', '06 - METRO': 'METRO', '10 - LITRO': 'LITRO'}
@@ -110,6 +252,10 @@ def safe_float(v):
     except: return 0.0
 
 def find_col(df, *kw_groups):
+    """Encuentra columna cuyo nombre contenga todas las keywords del grupo (case insensitive).
+    Acepta múltiples grupos, retorna el primero que matchea. Si no encuentra, retorna None.
+    Ej: find_col(df, ['PART','NUM'], ['PART','NUMBER'], 'PARTNUMBER')
+    """
     for kw_group in kw_groups:
         if isinstance(kw_group, str):
             kw_group = [kw_group]
@@ -152,7 +298,9 @@ def calcular_fobs(items, col_ext='EXTENDED_PRICE', col_spk='SPECIAL PACKING',
 
 def match_subitem(pn, qty, fob_calc, df_sub, usados):
     pn_n = norm_pn(pn)
-    mask = (df_sub['MODELO_NORM'] == pn_n)
+    try: qty_val = float(qty)
+    except: return None, None, 'sin_match'
+    mask = (df_sub['MODELO_NORM'] == pn_n) & (df_sub['CANTIDAD'].astype(float) == qty_val)
     disp = df_sub[mask & ~df_sub.index.isin(usados)].copy()
     if disp.empty: return None, None, 'sin_match'
     m = disp[(disp['MONTO FOB'].astype(float) - fob_calc).abs() <= 0.02]
@@ -238,11 +386,19 @@ def construir_filas(grupo_items, inv, rs, cuit_val, cond_merca):
 
 def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
     xl_madre = pd.ExcelFile(f_madre)
-    sheet_madre = 'Hoja1' if 'Hoja1' in xl_madre.sheet_names else xl_madre.sheet_names[0]
+    # Detectar la solapa correcta: la que tenga INVOICE_NUMBER y EXTENDED_PRICE
+    sheet_madre = xl_madre.sheet_names[0]
+    for sh in xl_madre.sheet_names:
+        try:
+            cols_sh = [str(c).strip().upper() for c in pd.read_excel(f_madre, sheet_name=sh, nrows=1, dtype=str).columns]
+            if any('INVOICE' in c and 'NUM' in c for c in cols_sh) and any('EXTENDED' in c for c in cols_sh):
+                sheet_madre = sh; break
+        except: pass
     df_madre = pd.read_excel(f_madre, sheet_name=sheet_madre, dtype=str)
     df_sub = pd.read_excel(f_despacho, sheet_name='Subitem', dtype=str)
     df_liq = pd.read_excel(f_despacho, sheet_name='Liquidación ítem', dtype=str)
     xl_eq = pd.ExcelFile(f_equipos)
+    # Detectar automáticamente la solapa que tenga columnas de part number y equipo
     sheet_eq = xl_eq.sheet_names[0]
     for sh in xl_eq.sheet_names:
         try:
@@ -287,34 +443,32 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
     desc_col_d = find_col(df_desc_df, ['DESCRIP']) or df_desc_df.columns[-1]
     descs = {norm_pn(str(r[desc_col_pn])): (str(r[desc_col_d]).strip() if pd.notna(r[desc_col_d]) else '') for _, r in df_desc_df.iterrows()}
 
-    derechos_liq = df_liq[df_liq['CONCEPTO'].str.contains('010|056', na=False)][['ITEM','PORCENTAJE']].copy()
+    derechos_liq = df_liq[df_liq['CONCEPTO'].str.contains('010', na=False)][['ITEM','PORCENTAJE']].copy()
     derechos_liq['PORCENTAJE'] = pd.to_numeric(derechos_liq['PORCENTAJE'], errors='coerce').fillna(0)
-    # Normalizar ITEM quitando ceros a la izquierda para el join
-    derechos_liq['ITEM_NORM'] = derechos_liq['ITEM'].astype(str).str.lstrip('0')
-    derechos_dict = dict(zip(derechos_liq['ITEM_NORM'], derechos_liq['PORCENTAJE']))
+    derechos_dict = dict(zip(derechos_liq['ITEM'], derechos_liq['PORCENTAJE']))
 
     df_sub = df_sub.dropna(subset=['MODELO'])
     df_sub['MODELO_NORM'] = df_sub['MODELO'].astype(str).apply(norm_pn)
     df_sub['NCM10'] = df_sub['NCM'].astype(str).str[:10]
-    # Normalizar ITEM en subitem también antes de mapear
-    df_sub['ITEM_NORM'] = df_sub['ITEM'].astype(str).str.lstrip('0')
-    df_sub['PCT_DERECHOS'] = df_sub['ITEM_NORM'].map(derechos_dict).fillna(0)
+    df_sub['PCT_DERECHOS'] = df_sub['ITEM'].map(derechos_dict).fillna(0)
 
+    # Detectar orígenes sin traducción
     col_origen = find_col(df_madre, ['ORIGIN'], ['ORIGEN'])
     sin_traduccion = []
     if col_origen:
         origenes_raw = df_madre[col_origen].dropna().astype(str).str.strip().str.upper().unique()
         sin_traduccion = sorted([o for o in origenes_raw if o and o != 'NAN' and o not in TRADUCCION_ORIGEN])
 
-    col_inv   = find_col(df_madre, ['INVOICE', 'NUM']) or 'INVOICE_NUMBER'
-    col_pn    = find_col(df_madre, ['PART', 'NUM']) or 'PART_NUMBER'
-    col_qty   = find_col(df_madre, ['QTY'], ['QUANTITY'], ['CANT']) or 'QTY'
-    col_cust  = find_col(df_madre, ['CUST', 'CD'], ['CUSTOMER', 'CD']) or 'CUST_CD'
-    col_ext   = find_col(df_madre, ['EXTENDED', 'PRICE'], ['EXT', 'PRICE']) or 'EXTENDED_PRICE'
-    col_spk   = find_col(df_madre, ['SPECIAL', 'PACK']) or 'SPECIAL PACKING'
-    col_frt   = find_col(df_madre, ['FREIGHT', 'CHARGE']) or 'FREIGHT_CHARGE'
-    col_bofrt = find_col(df_madre, ['BO', 'FREIGHT']) or 'BO_FREIGHT_CHARGE'
-    col_emerg = find_col(df_madre, ['EMERGENCY']) or 'EMERGENCY_FILL_CHARGE_VAL'
+    # Precalcular nombres de columnas del FACAERO una sola vez
+    col_inv    = find_col(df_madre, ['INVOICE', 'NUM']) or 'INVOICE_NUMBER'
+    col_pn     = find_col(df_madre, ['PART', 'NUM']) or 'PART_NUMBER'
+    col_qty    = find_col(df_madre, ['QTY'], ['QUANTITY'], ['CANT']) or 'QTY'
+    col_cust   = find_col(df_madre, ['CUST', 'CD'], ['CUSTOMER', 'CD']) or 'CUST_CD'
+    col_ext    = find_col(df_madre, ['EXTENDED', 'PRICE'], ['EXT', 'PRICE']) or 'EXTENDED_PRICE'
+    col_spk    = find_col(df_madre, ['SPECIAL', 'PACK']) or 'SPECIAL PACKING'
+    col_frt    = find_col(df_madre, ['FREIGHT', 'CHARGE']) or 'FREIGHT_CHARGE'
+    col_bofrt  = find_col(df_madre, ['BO', 'FREIGHT']) or 'BO_FREIGHT_CHARGE'
+    col_emerg  = find_col(df_madre, ['EMERGENCY']) or 'EMERGENCY_FILL_CHARGE_VAL'
 
     facturas = defaultdict(list)
     for _, row in df_madre.iterrows():
@@ -365,6 +519,7 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
             try: qty_int = int(float(qty_str)) if qty_str and qty_str != 'nan' else None
             except: qty_int = qty_str
 
+            # Guardamos el raw para traducir luego con las manuales
             origen_raw = str(item.get(col_origen, '')).strip().upper() if col_origen else ''
 
             items_proc.append({
@@ -373,7 +528,7 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
                 'valor_unit': valor_unit, 'valor_total': valor_total, 'unidad': unidad,
                 'tipo_maq': tipo_maq, 'marca_maq': marca_maq, 'modelo_maq': modelo_maq,
                 'descripcion': descripcion, 'proy': proy,
-                'origen_raw': origen_raw, 'origen': origen_raw,
+                'origen_raw': origen_raw, 'origen': origen_raw,  # se sobreescribe al confirmar
                 'item_di': item_di, 'estado_match': estado,
                 'incluir': incluir, 'motivo': motivo, 'desc_ok': desc_ok,
             })
@@ -392,6 +547,7 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
     return preview, rs, cuit_val, sin_traduccion
 
 def aplicar_traducciones(preview, traducciones_extra):
+    """Aplica traducciones a todos los ítems (válidos, excluidos y grupos)."""
     for inv, data in preview.items():
         for item in data['items_proc']:
             item['origen'] = traducir_pais(item['origen_raw'], traducciones_extra)
@@ -457,6 +613,7 @@ if st.session_state.get('analizado') and 'nro_ref' in st.session_state:
     nro = st.session_state['nro_ref']
     sin_traduccion = st.session_state.get('sin_traduccion', [])
 
+    # ── Bloque de traducciones manuales ──────────────────────────────────────
     if sin_traduccion:
         st.markdown("### 🌐 Orígenes sin traducción detectados")
         st.warning(f"⚠️ Se encontraron {len(sin_traduccion)} origen(es) no reconocido(s). Completá la traducción al español antes de generar.")
@@ -464,7 +621,11 @@ if st.session_state.get('analizado') and 'nro_ref' in st.session_state:
         cols_trad = st.columns(min(len(sin_traduccion), 3))
         for i, origen in enumerate(sin_traduccion):
             with cols_trad[i % 3]:
-                val = st.text_input(f"🌍 {origen}", key=f"trad_{origen}", placeholder="Ej: SUIZA").strip().upper()
+                val = st.text_input(
+                    f"🌍 {origen}",
+                    key=f"trad_{origen}",
+                    placeholder="Ej: SUIZA",
+                ).strip().upper()
                 traducciones_manuales[origen] = val
         st.session_state['traducciones_manuales'] = traducciones_manuales
         st.markdown("---")
@@ -480,10 +641,12 @@ if st.session_state.get('analizado') and 'nro_ref' in st.session_state:
         if excluidos:
             rows = ''.join([f"<div>⚠️ PN <b>{e['pn']}</b> | NCM {e['ncm10'] or 'sin NCM'} | {e['pct_der']}% | {e['motivo']}</div>" for e in excluidos])
             st.markdown(f'<div class="excluido-box"><div class="excluido-title">Ítems excluidos:</div>{rows}</div>', unsafe_allow_html=True)
+
         sin_desc = [i for g in grupos for i in g['items'] if not i.get('desc_ok')]
         if sin_desc:
             rows_desc = ''.join([f"<div>⚠️ PN <b>{i['pn']}</b> — descripción no encontrada en Excel Descripciones</div>" for i in sin_desc])
             st.markdown(f'<div class="excluido-box"><div class="excluido-title">⚠️ Descripciones faltantes:</div>{rows_desc}</div>', unsafe_allow_html=True)
+
         for g in grupos:
             nombre = f"TEMPLATE_{nro}_{inv}{g['sufijo']}.xlsx"
             if g['genera']:
@@ -492,9 +655,12 @@ if st.session_state.get('analizado') and 'nro_ref' in st.session_state:
                 st.markdown(f'<div class="no-genera-box">❌ {nombre} NO SE GENERA — {len(g["items"])} ítems | Derechos: USD {g["total_der"]} (menor a USD 50)</div>', unsafe_allow_html=True)
 
     st.markdown("---")
+
+    # Bloquear el botón si hay traducciones pendientes
     traducciones_incompletas = [o for o, v in st.session_state.get('traducciones_manuales', {}).items() if not v]
     if traducciones_incompletas:
         st.warning(f"⚠️ Completá la traducción de: **{', '.join(traducciones_incompletas)}** para poder generar.")
+
     puede_confirmar = not traducciones_incompletas
     if st.button("✅ CONFIRMAR Y GENERAR TEMPLATES", use_container_width=True, disabled=not puede_confirmar):
         st.session_state['confirmado'] = True
@@ -507,6 +673,7 @@ if st.session_state.get('confirmado') and 'nro_ref' in st.session_state:
     nro = st.session_state['nro_ref']
     traducciones_extra = st.session_state.get('traducciones_manuales', {})
 
+    # Aplicar todas las traducciones antes de generar
     aplicar_traducciones(preview, traducciones_extra)
 
     excel_bytes = {}
@@ -528,13 +695,16 @@ if st.session_state.get('confirmado') and 'nro_ref' in st.session_state:
             st.markdown(f'<div class="alerta-descarte">⚠️ {a}</div>', unsafe_allow_html=True)
 
     st.markdown(f"### 📥 Descargar — {len(excel_bytes)} templates generados")
-    cols_dl = st.columns(min(len(excel_bytes), 4))
-    for i, (nombre, b) in enumerate(excel_bytes.items()):
-        with cols_dl[i % 4]:
-            st.download_button(label=f"📄 {nombre}", data=b,
-                file_name=f"TEMPLATE_{nro}_{nombre}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                key=f"dl_{nombre}")
+    if not excel_bytes:
+        st.warning("⚠️ No se generó ningún template (todos tienen derechos < USD 50 o sin ítems válidos).")
+    else:
+        cols_dl = st.columns(min(len(excel_bytes), 4))
+        for i, (nombre, b) in enumerate(excel_bytes.items()):
+            with cols_dl[i % 4]:
+                st.download_button(label=f"📄 {nombre}", data=b,
+                    file_name=f"TEMPLATE_{nro}_{nombre}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key=f"dl_{nombre}")
 
     zip_buf = io.BytesIO()
     with zipfile.ZipFile(zip_buf, 'w') as zf:
@@ -550,8 +720,6 @@ if st.session_state.get('confirmado') and 'nro_ref' in st.session_state:
         for g in data['grupos']:
             if g['genera']:
                 todas.extend(construir_filas(g['items'], inv, rs, cuit_val, cond_merca))
-            else:
-                todas.extend(construir_filas_excluidos(g['items'], inv, rs, cuit_val, cond_merca))
         todas.extend(construir_filas_excluidos(data['excluidos'], inv, rs, cuit_val, cond_merca))
     if todas:
         st.download_button(label=f"📊 DESCARGAR TEMPLATE UNIFICADO — Operación {nro}",
