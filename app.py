@@ -309,6 +309,11 @@ def normalizar_clasificacion(v):
         if ok.lower() == t.lower(): return ok
     return t
 
+def texto_parte(inv, idx, n_partes):
+    """Texto de Observaciones de cada línea: la factura, y si se divide en varios templates, qué parte es.
+    Lo usan el Excel por factura y el unificado, para que cada línea se pueda ubicar en su template."""
+    return f"{inv} - Parte {idx}" if n_partes > 1 else inv
+
 def generar_excel_servicios(items, inv, idx, n_partes, nro_ref, cond_merca, caum, rs):
     """Excel de una factura (o de una parte de ella) en el formato Empresas Servicios V5.
     Parte de la plantilla del repositorio para conservar solapas, colores, listas y comentarios."""
@@ -320,7 +325,7 @@ def generar_excel_servicios(items, inv, idx, n_partes, nro_ref, cond_merca, caum
         for c in fila: c.value = None
     clasif = normalizar_clasificacion(rs['ClasificacionDeArticulo'])
     cond = COND_SERVICIOS.get(cond_merca, 'Nuevo')
-    obs = f"{inv} - Parte {idx}" if n_partes > 1 else inv
+    obs = texto_parte(inv, idx, n_partes)
     for r, it in enumerate(items, 2):
         p = it.get('proy') or {}
         unidad, _ = unidad_formato_nuevo(it.get('unidad_di'), unidades)
@@ -446,7 +451,7 @@ def construir_filas_excluidos(excluidos, inv, rs, cuit_val, cond_merca):
             'DetalleTransitorioDeposito': str(p.get('DetalleTransitorioDeposito', '')) if p else '',
             'ClasificacionDeArticulo': str(rs['ClasificacionDeArticulo']),
             'TipoDeFactura': 'DEFINITIVA', 'NumeroDeFactura': inv, 'OrdenDeCompra': None,
-            'Descripcion': f['descripcion'], 'Cantidad': f['qty_int'], 'UnidadMedida': f['unidad'],
+            'Descripcion': f['descripcion'], 'Cantidad': f['qty_int'], 'UnidadMedida': f['unidad_nuevo'] or '07 - UNIDAD',
             'PosicionArancelaria': f['ncm'], 'Marca': None, 'Modelo': None,
             'NroDeSerie': None, 'ValorUnitario': f['valor_unit'], 'ValorTotalItem': f['valor_total'],
             'SerieDelMotor': None, 'MarcaDelMotor': None, 'ModeloMotor': None,
@@ -459,7 +464,7 @@ def construir_filas_excluidos(excluidos, inv, rs, cuit_val, cond_merca):
         })
     return filas
 
-def construir_filas(grupo_items, inv, rs, cuit_val, cond_merca):
+def construir_filas(grupo_items, inv, rs, cuit_val, cond_merca, observ=None):
     valor_fob_total = round(sum(i['fob_final'] for i in grupo_items if i['fob_final']), 2)
     filas = []
     for f in grupo_items:
@@ -475,7 +480,7 @@ def construir_filas(grupo_items, inv, rs, cuit_val, cond_merca):
             'DetalleTransitorioDeposito': str(p.get('DetalleTransitorioDeposito', '')) if p else '',
             'ClasificacionDeArticulo': str(rs['ClasificacionDeArticulo']),
             'TipoDeFactura': 'DEFINITIVA', 'NumeroDeFactura': inv, 'OrdenDeCompra': None,
-            'Descripcion': f['descripcion'], 'Cantidad': f['qty_int'], 'UnidadMedida': f['unidad'],
+            'Descripcion': f['descripcion'], 'Cantidad': f['qty_int'], 'UnidadMedida': f['unidad_nuevo'] or '07 - UNIDAD',
             'PosicionArancelaria': f['ncm'], 'Marca': 'CATERPILLAR', 'Modelo': 'NO POSEE',
             'NroDeSerie': 'NO POSEE', 'ValorUnitario': f['valor_unit'], 'ValorTotalItem': f['valor_total'],
             'SerieDelMotor': None, 'MarcaDelMotor': None, 'ModeloMotor': None,
@@ -483,7 +488,7 @@ def construir_filas(grupo_items, inv, rs, cuit_val, cond_merca):
             'CodigoParte': f['pn'], 'TipoDeMaquina': f['tipo_maq'],
             'MarcaMaquina': f['marca_maq'], 'ModeloMaquina': f['modelo_maq'],
             'Expedientes Escalonados': 'no', 'Proveedor': 'CATERPILLAR',
-            'PaisOrigenDeLaMercaderia': f['origen'], 'Observaciones': None,
+            'PaisOrigenDeLaMercaderia': f['origen'], 'Observaciones': observ,
             'ITEM_DESPACHO': f['item_di'],
         })
     return filas
@@ -860,7 +865,8 @@ if st.session_state.get('confirmado') and 'nro_ref' in st.session_state:
     for inv, data in preview.items():
         for g in data['grupos']:
             if g['genera']:
-                todas.extend(construir_filas(g['items'], inv, rs, cuit_val, cond_merca))
+                todas.extend(construir_filas(g['items'], inv, rs, cuit_val, cond_merca,
+                                             observ=texto_parte(inv, g['idx'], len(data['grupos']))))
         todas.extend(construir_filas_excluidos(data['excluidos'], inv, rs, cuit_val, cond_merca))
     if todas:
         st.download_button(label=f"📊 DESCARGAR TEMPLATE UNIFICADO — Operación {nro}",
