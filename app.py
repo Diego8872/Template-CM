@@ -5,7 +5,8 @@ import pandas as pd
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 from collections import defaultdict
-import io, math, zipfile
+import io, math, zipfile, os
+from openpyxl.worksheet.datavalidation import DataValidation
 
 st.markdown("""
 <style>
@@ -30,7 +31,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-ARCHIVOS_FIJOS = {'razon': 'RAZON_SOCIAL_FSM.xlsx', 'proyectos': 'PROYECTOS.xlsx', 'ncm': 'NCM_LEY_MINERA.xlsx'}
+ARCHIVOS_FIJOS = {'razon': 'RAZON_SOCIAL_FSM.xlsx', 'proyectos': 'PROYECTOS.xlsx', 'ncm': 'NCM_LEY_MINERA.xlsx',
+                  'plantilla': 'EMPRESAS_SERVICIOS_V5.xlsx'}
 
 TRADUCCION_ORIGEN = {
     # América del Norte
@@ -246,6 +248,108 @@ SIN_COLOR = {
     'Observaciones','ITEM_DESPACHO'
 }
 
+# ── Formato nuevo del Excel por factura: "Empresas Servicios V5" ──────────────
+# Datos fijos de cabecera (siempre iguales). Si alguno cambia, se edita acá.
+FIJOS_SERVICIOS = {
+    'TipoEntidad': 'Empresas prestadoras de Servicios',
+    'RazonSocial': 'Finning Soluciones Mineras SA',
+    'CUIT': 30681530327,
+    'DomicilioEspecialElectronico': 'Notificacionestad@finning.com',
+    'DestinoMinero': 'Proyecto',
+    'ServicioAPrestar': 'Reparación de equipos y componentes',
+    'TipoImportacion': 'Directa',
+}
+CLASIF_VALIDAS = ['Bienes de capital', 'Insumos', 'Partes y repuestos']
+COND_SERVICIOS = {'NUEVA': 'Nuevo', 'USADA': 'Usado'}
+
+def limpiar_texto(v):
+    """Quita espacios de más (dobles, al inicio y al final). Vacío si el dato es nulo."""
+    if v is None or pd.isna(v): return ''
+    return ' '.join(str(v).split())
+
+def buscar_equipo(eq_inv, eq_pn, inv, pn_n):
+    """Equipo de un repuesto: primero por factura + PN; si esa factura no trae el PN, por PN solo
+    (únicamente cuando el PN tiene un solo equipo en todo el Excel).
+    Devuelve (equipo, estado): 'ok', 'ambiguo' (hay más de un equipo posible) o 'no_encontrado'.
+    En los dos últimos casos el equipo queda vacío para no declarar uno equivocado."""
+    lst = eq_inv.get((inv, pn_n)) or eq_pn.get(pn_n) or []
+    if len(lst) == 1: return lst[0], 'ok'
+    return '', ('ambiguo' if lst else 'no_encontrado')
+
+def _ruta_plantilla():
+    ruta = ARCHIVOS_FIJOS['plantilla']
+    if not os.path.exists(ruta):
+        raise FileNotFoundError(f"No se encontró {ruta} en el repositorio. Subilo junto a los otros archivos fijos.")
+    return ruta
+
+def cargar_unidades_validas():
+    """Lista de unidades válidas: solapa UnidadesMedida de la plantilla (ej: '07 - UNIDAD')."""
+    wb = openpyxl.load_workbook(_ruta_plantilla(), read_only=True, data_only=True)
+    try:
+        return [str(r[0]).strip() for r in wb['UnidadesMedida'].iter_rows(values_only=True) if r and r[0]]
+    finally:
+        wb.close()
+
+def unidad_formato_nuevo(raw, validas):
+    """Unidad de la DI -> texto exacto de la lista UnidadesMedida del formato nuevo.
+    Si coincide tal cual la usa; si no, busca por nombre (ej: '06 - METRO' -> '02 - METRO').
+    Devuelve (unidad, encontrada)."""
+    raw = str(raw or '').strip()
+    if not raw: return '', False
+    if raw in validas: return raw, True
+    nombre = raw.split(' - ', 1)[-1].strip().upper()
+    for v in validas:
+        if v.split(' - ', 1)[-1].strip().upper() == nombre: return v, True
+    return raw, False
+
+def normalizar_clasificacion(v):
+    """Lleva el texto al valor exacto que acepta la lista del formato nuevo (ej: 'partes y Repuestos' -> 'Partes y repuestos')."""
+    t = ' '.join(str(v).split())
+    for ok in CLASIF_VALIDAS:
+        if ok.lower() == t.lower(): return ok
+    return t
+
+def generar_excel_servicios(items, inv, idx, n_partes, nro_ref, cond_merca, caum, rs):
+    """Excel de una factura (o de una parte de ella) en el formato Empresas Servicios V5.
+    Parte de la plantilla del repositorio para conservar solapas, colores, listas y comentarios."""
+    wb = openpyxl.load_workbook(_ruta_plantilla())
+    ws = wb['General']
+    columnas = {str(c.value).strip(): c.column for c in ws[1] if c.value}
+    unidades = [str(c.value).strip() for c in wb['UnidadesMedida']['A'] if c.value]
+    for fila in ws.iter_rows(min_row=2, max_row=ws.max_row):  # borra la fila de ejemplo de la plantilla
+        for c in fila: c.value = None
+    clasif = normalizar_clasificacion(rs['ClasificacionDeArticulo'])
+    cond = COND_SERVICIOS.get(cond_merca, 'Nuevo')
+    obs = f"{inv} - Parte {idx}" if n_partes > 1 else inv
+    for r, it in enumerate(items, 2):
+        p = it.get('proy') or {}
+        unidad, _ = unidad_formato_nuevo(it.get('unidad_di'), unidades)
+        valores = dict(FIJOS_SERVICIOS)
+        valores.update({
+            'NroReferenciaInterna': str(nro_ref).strip(),
+            'ProyectoMineroAfectado': str(p.get('ProyectoMinero', '')).strip().upper() or None,
+            'PosicionArancelaria': it['ncm'],
+            'ClasificacionDeArticulo': clasif,
+            'Clasificacion_PartesRepuestos_Especificar': (it.get('equipo_txt') or None) if clasif == 'Partes y repuestos' else None,
+            'CondMercaderia': cond,
+            'CondMercaderia_Usado_PoseeCAUM': (caum if cond == 'Usado' else None),
+            'Cantidad': it['qty_int'],
+            'UnidadMedida': unidad or None,
+            'Descripcion': it.get('descripcion') or None,
+            'Observaciones': obs,
+        })
+        for nombre, col in columnas.items():
+            ws.cell(row=r, column=col, value=valores.get(nombre))
+    # openpyxl no conserva la lista desplegable de UnidadMedida (la plantilla la guarda como extensión): se vuelve a crear
+    if unidades and 'UnidadMedida' in columnas:
+        letra = openpyxl.utils.get_column_letter(columnas['UnidadMedida'])
+        dv = DataValidation(type='list', formula1=f"UnidadesMedida!$A$1:$A${len(unidades)}", allow_blank=True,
+                            showErrorMessage=True, error='Se debe completar con una Unidad medida valida')
+        dv.add(f"{letra}2:{letra}1000")
+        ws.add_data_validation(dv)
+    ws.sheet_view.topLeftCell = 'A1'
+    buf = io.BytesIO(); wb.save(buf); return buf.getvalue()
+
 def safe_float(v):
     try:
         f = float(v); return 0.0 if math.isnan(f) else f
@@ -437,7 +541,17 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
 
     eq_col_pn = find_col(df_eq, ['PART', 'NUM']) or df_eq.columns[0]
     eq_col_eq = find_col(df_eq, ['EQUIP']) or df_eq.columns[-1]
-    equipos = {norm_pn(str(r[eq_col_pn])): (str(r[eq_col_eq]).strip() if pd.notna(r[eq_col_eq]) else '') for _, r in df_eq.iterrows()}
+    eq_col_inv = find_col(df_eq, ['INVOICE'], ['FACTURA'])
+    equipos_inv = {}  # (factura, PN) -> equipos distintos
+    equipos_pn = {}   # PN -> equipos distintos (solo se usa si la factura no trae ese PN)
+    for _, r in df_eq.iterrows():
+        pn_e = norm_pn(str(r[eq_col_pn])); eq_e = limpiar_texto(r[eq_col_eq])
+        if not eq_e: continue
+        if eq_col_inv:
+            lst = equipos_inv.setdefault((str(r[eq_col_inv]).strip(), pn_e), [])
+            if eq_e not in lst: lst.append(eq_e)
+        lst = equipos_pn.setdefault(pn_e, [])
+        if eq_e not in lst: lst.append(eq_e)
 
     desc_col_pn = find_col(df_desc_df, ['PART', 'NUM']) or df_desc_df.columns[0]
     desc_col_d = find_col(df_desc_df, ['DESCRIP']) or df_desc_df.columns[-1]
@@ -451,6 +565,7 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
     df_sub['MODELO_NORM'] = df_sub['MODELO'].astype(str).apply(norm_pn)
     df_sub['NCM10'] = df_sub['NCM'].astype(str).str[:10]
     df_sub['PCT_DERECHOS'] = df_sub['ITEM'].map(derechos_dict).fillna(0)
+    unidades_validas = cargar_unidades_validas()
 
     # Detectar orígenes sin traducción
     col_origen = find_col(df_madre, ['ORIGIN'], ['ORIGEN'])
@@ -468,7 +583,7 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
     col_spk    = find_col(df_madre, ['SPECIAL', 'PACK']) or 'SPECIAL PACKING'
     col_frt    = find_col(df_madre, ['FREIGHT', 'CHARGE']) or 'FREIGHT_CHARGE'
     col_bofrt  = find_col(df_madre, ['BO', 'FREIGHT']) or 'BO_FREIGHT_CHARGE'
-    col_emerg  = find_col(df_madre, ['EMERGENCY']) or 'EMERGENCY_FILL_CHARGE_VAL'
+    col_emerg  = find_col(df_madre, ['EMERGENCY', 'VAL'], ['EMERGENCY']) or 'EMERGENCY_FILL_CHARGE_VAL'
 
     facturas = defaultdict(list)
     for _, row in df_madre.iterrows():
@@ -493,6 +608,7 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
 
             fob_final = ncm = valor_unit = valor_total = None
             unidad = 'UNIDAD'; ncm10 = ''; pct_der = 0.0; pn_di = pn
+            unidad_di = ''
 
             if sub_row is not None:
                 fob_final = round(float(sub_row['MONTO FOB']), 2)
@@ -506,13 +622,17 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
                 except: valor_unit = fob_final
                 valor_total = fob_final
                 unidad = UNIDAD_MAP.get(str(sub_row.get('UNIDAD DECLARADA', '')).strip(), 'UNIDAD')
+                unidad_di = str(sub_row.get('UNIDAD DECLARADA', '')).strip()
+                if unidad_di.lower() == 'nan': unidad_di = ''
 
             ncm_ok = ncm10 in ncm_validas
             paga_der = pct_der > 0
             incluir = ncm_ok and paga_der
             motivo = '' if incluir else ('NCM no incluida en Ley Minera' if not ncm_ok else '0% derechos de importación')
 
-            tipo_maq, marca_maq, modelo_maq = parsear_equipo(equipos.get(pn_n, ''))
+            equipo_txt, equipo_estado = buscar_equipo(equipos_inv, equipos_pn, inv, pn_n)
+            tipo_maq, marca_maq, modelo_maq = parsear_equipo(equipo_txt)
+            unidad_nuevo, unidad_ok = unidad_formato_nuevo(unidad_di, unidades_validas)
             descripcion = descs.get(pn_n, descs.get(pn, ''))
             desc_ok = bool(descripcion)
             proy = proyectos.get(cust_cd, {})
@@ -530,6 +650,8 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
                 'descripcion': descripcion, 'proy': proy,
                 'origen_raw': origen_raw, 'origen': origen_raw,  # se sobreescribe al confirmar
                 'item_di': item_di, 'estado_match': estado,
+                'equipo_txt': equipo_txt, 'equipo_estado': equipo_estado,
+                'unidad_di': unidad_di, 'unidad_nuevo': unidad_nuevo, 'unidad_ok': unidad_ok, 'cust_cd': cust_cd,
                 'incluir': incluir, 'motivo': motivo, 'desc_ok': desc_ok,
             })
 
@@ -565,7 +687,8 @@ st.markdown("---")
 col_main, col_config = st.columns([2.5, 1])
 with col_main:
     st.markdown('<p class="seccion-titulo">📂 Archivos de la operación</p>', unsafe_allow_html=True)
-    nro_ref = st.text_input("Número de referencia de la operación", placeholder="ej: 982755")
+    nro_ref = st.text_input("Número de referencia de la operación", placeholder="ej: 982755",
+                            help="Se carga como NroReferenciaInterna en el template de cada factura.")
     c1, c2 = st.columns(2)
     with c1:
         f_madre = st.file_uploader(f"Excel FACAERO {nro_ref}" if nro_ref else "Excel FACAERO", type=["xlsx"])
@@ -577,6 +700,7 @@ with col_main:
 with col_config:
     st.markdown('<p class="seccion-titulo">⚙️ Configuración</p>', unsafe_allow_html=True)
     cond_merca = st.selectbox("Condición de Mercadería", ["NUEVA", "USADA"])
+    caum = st.selectbox("¿Posee CAUM?", ["Si", "No"]) if cond_merca == "USADA" else None
     st.markdown("<br>", unsafe_allow_html=True)
     archivos_din = [f_madre, f_despacho, f_equipos, f_descripciones]
     nombres_din = [f"FACAERO {nro_ref or ''}", f"DI {nro_ref or ''}", "Equipos", "Descripciones"]
@@ -585,7 +709,7 @@ with col_config:
         if f: st.markdown(f'<span class="badge-ok">✓ {n}</span>', unsafe_allow_html=True)
         else: st.markdown(f'<span class="badge-err">✗ {n}</span>', unsafe_allow_html=True)
     st.markdown("<br>**Archivos fijos del sistema:**")
-    for nombre in ["Razón Social", "Proyectos", "NCM Ley Minera"]:
+    for nombre in ["Razón Social", "Proyectos", "NCM Ley Minera", "Plantilla Servicios V5"]:
         st.markdown(f'<span class="badge-fixed">⚙ {nombre}</span>', unsafe_allow_html=True)
 
 st.markdown("---")
@@ -599,7 +723,7 @@ if st.button("🔍 ANALIZAR OPERACIÓN", disabled=not todos_cargados, use_contai
             preview, rs, cuit_val, sin_traduccion = procesar(f_madre, f_despacho, f_equipos, f_descripciones, cond_merca)
             st.session_state.update({
                 'preview': preview, 'rs': rs, 'cuit_val': cuit_val,
-                'cond_merca': cond_merca, 'nro_ref': nro_ref,
+                'cond_merca': cond_merca, 'caum': caum, 'nro_ref': nro_ref,
                 'analizado': True, 'confirmado': False,
                 'sin_traduccion': sin_traduccion,
                 'traducciones_manuales': {},
@@ -631,6 +755,9 @@ if st.session_state.get('analizado') and 'nro_ref' in st.session_state:
         st.markdown("---")
 
     st.markdown("### 🔎 Revisión previa — Confirmá antes de generar")
+    _clasif_txt = str(st.session_state['rs']['ClasificacionDeArticulo'])
+    if normalizar_clasificacion(_clasif_txt) not in CLASIF_VALIDAS:
+        st.warning(f"⚠️ La clasificación del archivo de Razón Social ('{_clasif_txt}') no coincide con las del formato nuevo ({', '.join(CLASIF_VALIDAS)}).")
 
     for inv, data in preview.items():
         excluidos = data['excluidos']
@@ -646,6 +773,20 @@ if st.session_state.get('analizado') and 'nro_ref' in st.session_state:
         if sin_desc:
             rows_desc = ''.join([f"<div>⚠️ PN <b>{i['pn']}</b> — descripción no encontrada en Excel Descripciones</div>" for i in sin_desc])
             st.markdown(f'<div class="excluido-box"><div class="excluido-title">⚠️ Descripciones faltantes:</div>{rows_desc}</div>', unsafe_allow_html=True)
+
+        validos_inv = [i for g in grupos for i in g['items']]
+        sin_eq = [i for i in validos_inv if i.get('equipo_estado') != 'ok']
+        if sin_eq:
+            rows_eq = ''.join([f"<div>⚠️ PN <b>{i['pn']}</b> — " + ("equipo no encontrado en Excel Equipos" if i['equipo_estado'] == 'no_encontrado' else "más de un equipo posible para este PN; se dejó vacío") + "</div>" for i in sin_eq])
+            st.markdown(f'<div class="excluido-box"><div class="excluido-title">⚠️ Equipos faltantes:</div>{rows_eq}</div>', unsafe_allow_html=True)
+        sin_proy = [i for i in validos_inv if not i.get('proy')]
+        if sin_proy:
+            rows_proy = ''.join([f"<div>⚠️ PN <b>{i['pn']}</b> — el cliente {i.get('cust_cd') or '(vacío)'} no está en Proyectos</div>" for i in sin_proy])
+            st.markdown(f'<div class="excluido-box"><div class="excluido-title">⚠️ Proyecto faltante:</div>{rows_proy}</div>', unsafe_allow_html=True)
+        sin_unid = [i for i in validos_inv if not i.get('unidad_ok')]
+        if sin_unid:
+            rows_unid = ''.join([f"<div>⚠️ PN <b>{i['pn']}</b> — unidad '{i.get('unidad_di') or 'vacía'}' sin equivalente en la lista del formato nuevo</div>" for i in sin_unid])
+            st.markdown(f'<div class="excluido-box"><div class="excluido-title">⚠️ Unidades a revisar:</div>{rows_unid}</div>', unsafe_allow_html=True)
 
         for g in grupos:
             nombre = f"TEMPLATE_{nro}_{inv}{g['sufijo']}.xlsx"
@@ -672,6 +813,7 @@ if st.session_state.get('confirmado') and 'nro_ref' in st.session_state:
     cond_merca = st.session_state['cond_merca']
     nro = st.session_state['nro_ref']
     traducciones_extra = st.session_state.get('traducciones_manuales', {})
+    caum = st.session_state.get('caum')
 
     # Aplicar todas las traducciones antes de generar
     aplicar_traducciones(preview, traducciones_extra)
@@ -683,8 +825,7 @@ if st.session_state.get('confirmado') and 'nro_ref' in st.session_state:
         for g in data['grupos']:
             if not g['genera']: continue
             nombre = f"{inv}{g['sufijo']}"
-            filas = construir_filas(g['items'], inv, rs, cuit_val, cond_merca)
-            excel_bytes[nombre] = generar_excel_bytes(filas)
+            excel_bytes[nombre] = generar_excel_servicios(g['items'], inv, g['idx'], len(data['grupos']), nro, cond_merca, caum, rs)
             for item in g['items']:
                 if item['estado_match'] == 'descarte':
                     alertas.append(f"<b>{inv}</b> | PN <code>{item['pn']}</code> → ITEM <code>{item['item_di']}</code> asignado por descarte. Verificar.")
