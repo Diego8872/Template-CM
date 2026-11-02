@@ -562,14 +562,20 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
     desc_col_d = find_col(df_desc_df, ['DESCRIP']) or df_desc_df.columns[-1]
     descs = {norm_pn(str(r[desc_col_pn])): (str(r[desc_col_d]).strip() if pd.notna(r[desc_col_d]) else '') for _, r in df_desc_df.iterrows()}
 
-    derechos_liq = df_liq[df_liq['CONCEPTO'].str.contains('010', na=False)][['ITEM','PORCENTAJE']].copy()
+    # Derechos de importación: concepto 010 (mercadería nueva) o 056/057 (mercadería usada).
+    # Un ítem tiene uno solo de los tres. Se busca por el código al inicio del concepto ('056 - ...').
+    CONCEPTOS_DERECHOS = ('010', '056', '057')
+    df_liq['COD_CONCEPTO'] = df_liq['CONCEPTO'].astype(str).str.strip().str[:3]
+    derechos_liq = df_liq[df_liq['COD_CONCEPTO'].isin(CONCEPTOS_DERECHOS)][['ITEM','PORCENTAJE','COD_CONCEPTO']].copy()
     derechos_liq['PORCENTAJE'] = pd.to_numeric(derechos_liq['PORCENTAJE'], errors='coerce').fillna(0)
     derechos_dict = dict(zip(derechos_liq['ITEM'], derechos_liq['PORCENTAJE']))
+    concepto_dict = dict(zip(derechos_liq['ITEM'], derechos_liq['COD_CONCEPTO']))
 
     df_sub = df_sub.dropna(subset=['MODELO'])
     df_sub['MODELO_NORM'] = df_sub['MODELO'].astype(str).apply(norm_pn)
     df_sub['NCM10'] = df_sub['NCM'].astype(str).str[:10]
     df_sub['PCT_DERECHOS'] = df_sub['ITEM'].map(derechos_dict).fillna(0)
+    df_sub['CONCEPTO_DER'] = df_sub['ITEM'].map(concepto_dict).fillna('')
     unidades_validas = cargar_unidades_validas()
 
     # Detectar orígenes sin traducción
@@ -613,13 +619,14 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
 
             fob_final = ncm = valor_unit = valor_total = None
             unidad = 'UNIDAD'; ncm10 = ''; pct_der = 0.0; pn_di = pn
-            unidad_di = ''
+            unidad_di = ''; concepto_der = ''
 
             if sub_row is not None:
                 fob_final = round(float(sub_row['MONTO FOB']), 2)
                 ncm = str(sub_row.get('NCM', '')).strip()
                 ncm10 = ncm[:10]
                 pct_der = float(sub_row.get('PCT_DERECHOS', 0))
+                concepto_der = str(sub_row.get('CONCEPTO_DER', ''))
                 pn_di = str(sub_row.get('MODELO', pn)).strip()
                 try:
                     qty_f = float(qty_str)
@@ -655,7 +662,7 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
                 'descripcion': descripcion, 'proy': proy,
                 'origen_raw': origen_raw, 'origen': origen_raw,  # se sobreescribe al confirmar
                 'item_di': item_di, 'estado_match': estado,
-                'equipo_txt': equipo_txt, 'equipo_estado': equipo_estado,
+                'equipo_txt': equipo_txt, 'equipo_estado': equipo_estado, 'concepto_der': concepto_der,
                 'unidad_di': unidad_di, 'unidad_nuevo': unidad_nuevo, 'unidad_ok': unidad_ok, 'cust_cd': cust_cd,
                 'incluir': incluir, 'motivo': motivo, 'desc_ok': desc_ok,
             })
@@ -792,6 +799,13 @@ if st.session_state.get('analizado') and 'nro_ref' in st.session_state:
         if sin_unid:
             rows_unid = ''.join([f"<div>⚠️ PN <b>{i['pn']}</b> — unidad '{i.get('unidad_di') or 'vacía'}' sin equivalente en la lista del formato nuevo</div>" for i in sin_unid])
             st.markdown(f'<div class="excluido-box"><div class="excluido-title">⚠️ Unidades a revisar:</div>{rows_unid}</div>', unsafe_allow_html=True)
+
+        usados_di = [i for i in data['items_proc'] if i.get('concepto_der') in ('056', '057')]
+        if usados_di:
+            msg_u = f"{len(usados_di)} ítem(s) pagan derechos por concepto 056/057 (mercadería usada): " + ', '.join(sorted({str(i['pn']) for i in usados_di}))
+            if st.session_state.get('cond_merca') != 'USADA':
+                msg_u += ". La condición de la operación está en NUEVA: revisá si corresponde."
+            st.markdown(f'<div class="excluido-box"><div class="excluido-title">⚠️ Mercadería usada en la DI:</div><div>{msg_u}</div></div>', unsafe_allow_html=True)
 
         for g in grupos:
             nombre = f"TEMPLATE_{nro}_{inv}{g['sufijo']}.xlsx"
