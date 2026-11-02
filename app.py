@@ -260,7 +260,6 @@ FIJOS_SERVICIOS = {
     'TipoImportacion': 'Directa',
 }
 CLASIF_VALIDAS = ['Bienes de capital', 'Insumos', 'Partes y repuestos']
-COND_SERVICIOS = {'NUEVA': 'Nuevo', 'USADA': 'Usado'}
 
 def limpiar_texto(v):
     """Quita espacios de más (dobles, al inicio y al final). Vacío si el dato es nulo."""
@@ -309,12 +308,13 @@ def normalizar_clasificacion(v):
         if ok.lower() == t.lower(): return ok
     return t
 
-def texto_parte(inv, idx, n_partes):
-    """Texto de Observaciones de cada línea: la factura, y si se divide en varios templates, qué parte es.
-    Lo usan el Excel por factura y el unificado, para que cada línea se pueda ubicar en su template."""
-    return f"{inv} - Parte {idx}" if n_partes > 1 else inv
+def texto_parte(inv, idx, n_partes, reac=False):
+    """Texto de Observaciones de cada línea: la factura (más 'Reacondicionados' si es el template de reacondicionados)
+    y, si ese template se divide en varios, qué parte es. Lo usan el Excel por factura y el unificado."""
+    base = f"{inv} - Reacondicionados" if reac else inv
+    return f"{base} - Parte {idx}" if n_partes > 1 else base
 
-def generar_excel_servicios(items, inv, idx, n_partes, nro_ref, cond_merca, caum, rs):
+def generar_excel_servicios(items, inv, idx, n_partes, nro_ref, rs, reac=False):
     """Excel de una factura (o de una parte de ella) en el formato Empresas Servicios V5.
     Parte de la plantilla del repositorio para conservar solapas, colores, listas y comentarios."""
     wb = openpyxl.load_workbook(_ruta_plantilla())
@@ -324,8 +324,7 @@ def generar_excel_servicios(items, inv, idx, n_partes, nro_ref, cond_merca, caum
     for fila in ws.iter_rows(min_row=2, max_row=ws.max_row):  # borra la fila de ejemplo de la plantilla
         for c in fila: c.value = None
     clasif = normalizar_clasificacion(rs['ClasificacionDeArticulo'])
-    cond = COND_SERVICIOS.get(cond_merca, 'Nuevo')
-    obs = texto_parte(inv, idx, n_partes)
+    obs = texto_parte(inv, idx, n_partes, reac)
     for r, it in enumerate(items, 2):
         p = it.get('proy') or {}
         unidad, _ = unidad_formato_nuevo(it.get('unidad_di'), unidades)
@@ -336,8 +335,8 @@ def generar_excel_servicios(items, inv, idx, n_partes, nro_ref, cond_merca, caum
             'PosicionArancelaria': it['ncm'],
             'ClasificacionDeArticulo': clasif,
             'Clasificacion_PartesRepuestos_Especificar': (it.get('equipo_txt') or None) if clasif == 'Partes y repuestos' else None,
-            'CondMercaderia': cond,
-            'CondMercaderia_Usado_PoseeCAUM': (caum if cond == 'Usado' else None),
+            'CondMercaderia': 'Reacondicionado' if it.get('usado') else 'Nuevo',
+            'CondMercaderia_Usado_PoseeCAUM': 'Si' if it.get('usado') else None,
             'Cantidad': it['qty_int'],
             'UnidadMedida': unidad or None,
             'Descripcion': it.get('descripcion') or None,
@@ -436,14 +435,14 @@ def generar_excel_bytes(filas):
     ws.freeze_panes = 'A2'
     buf = io.BytesIO(); wb.save(buf); buf.seek(0); return buf.getvalue()
 
-def construir_filas_excluidos(excluidos, inv, rs, cuit_val, cond_merca):
+def construir_filas_excluidos(excluidos, inv, rs, cuit_val):
     filas = []
     for f in excluidos:
         p = f['proy']
         filas.append({
             'ID': 0, 'InscRUMP': str(rs['InscRUMP']), 'ActiServ': str(rs['ActiServ']),
             'NroInsc': str(rs['NroInsc']), 'RazonSocial': str(rs['RazonSocial']),
-            'CUIT': cuit_val, 'ImpDirecta': str(rs['ImpDirecta']), 'CondMerca': cond_merca,
+            'CUIT': cuit_val, 'ImpDirecta': str(rs['ImpDirecta']), 'CondMerca': 'USADA' if f.get('usado') else 'NUEVA',
             'AnioFabricacion': None, 'RazonSocialLeasing': None, 'CuitLeasing': None, 'SimiSira': None,
             'ValorFOBTotal': f['fob_final'],
             'ProyectoMinero': str(p.get('ProyectoMinero', '')).upper() if p else '',
@@ -464,7 +463,7 @@ def construir_filas_excluidos(excluidos, inv, rs, cuit_val, cond_merca):
         })
     return filas
 
-def construir_filas(grupo_items, inv, rs, cuit_val, cond_merca, observ=None):
+def construir_filas(grupo_items, inv, rs, cuit_val, observ=None):
     valor_fob_total = round(sum(i['fob_final'] for i in grupo_items if i['fob_final']), 2)
     filas = []
     for f in grupo_items:
@@ -472,7 +471,7 @@ def construir_filas(grupo_items, inv, rs, cuit_val, cond_merca, observ=None):
         filas.append({
             'ID': 0, 'InscRUMP': str(rs['InscRUMP']), 'ActiServ': str(rs['ActiServ']),
             'NroInsc': str(rs['NroInsc']), 'RazonSocial': str(rs['RazonSocial']),
-            'CUIT': cuit_val, 'ImpDirecta': str(rs['ImpDirecta']), 'CondMerca': cond_merca,
+            'CUIT': cuit_val, 'ImpDirecta': str(rs['ImpDirecta']), 'CondMerca': 'USADA' if f.get('usado') else 'NUEVA',
             'AnioFabricacion': None, 'RazonSocialLeasing': None, 'CuitLeasing': None, 'SimiSira': None,
             'ValorFOBTotal': valor_fob_total,
             'ProyectoMinero': str(p.get('ProyectoMinero', '')).upper() if p else '',
@@ -493,7 +492,7 @@ def construir_filas(grupo_items, inv, rs, cuit_val, cond_merca, observ=None):
         })
     return filas
 
-def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
+def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca=None):
     xl_madre = pd.ExcelFile(f_madre)
     # Detectar la solapa correcta: la que tenga INVOICE_NUMBER y EXTENDED_PRICE
     sheet_madre = xl_madre.sheet_names[0]
@@ -619,7 +618,7 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
 
             fob_final = ncm = valor_unit = valor_total = None
             unidad = 'UNIDAD'; ncm10 = ''; pct_der = 0.0; pn_di = pn
-            unidad_di = ''; concepto_der = ''
+            unidad_di = ''; concepto_der = ''; estado_di = ''
 
             if sub_row is not None:
                 fob_final = round(float(sub_row['MONTO FOB']), 2)
@@ -627,6 +626,8 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
                 ncm10 = ncm[:10]
                 pct_der = float(sub_row.get('PCT_DERECHOS', 0))
                 concepto_der = str(sub_row.get('CONCEPTO_DER', ''))
+                estado_di = str(sub_row.get('ESTADO', '')).strip()
+                if estado_di.lower() == 'nan': estado_di = ''
                 pn_di = str(sub_row.get('MODELO', pn)).strip()
                 try:
                     qty_f = float(qty_str)
@@ -663,18 +664,27 @@ def procesar(f_madre, f_despacho, f_equipos, f_desc, cond_merca):
                 'origen_raw': origen_raw, 'origen': origen_raw,  # se sobreescribe al confirmar
                 'item_di': item_di, 'estado_match': estado,
                 'equipo_txt': equipo_txt, 'equipo_estado': equipo_estado, 'concepto_der': concepto_der,
+                'estado_di': estado_di, 'usado': concepto_der in ('056', '057'),
                 'unidad_di': unidad_di, 'unidad_nuevo': unidad_nuevo, 'unidad_ok': unidad_ok, 'cust_cd': cust_cd,
                 'incluir': incluir, 'motivo': motivo, 'desc_ok': desc_ok,
             })
 
         validos = [i for i in items_proc if i['incluir']]
         excluidos = [i for i in items_proc if not i['incluir']]
-        grupos = [validos[i:i+30] for i in range(0, max(len(validos), 1), 30)]
+        validos_nuevos = [i for i in validos if not i['usado']]
+        validos_reac = [i for i in validos if i['usado']]  # concepto 056/057: reacondicionados, template aparte
         grupos_info = []
-        for g_idx, grupo in enumerate(grupos, 1):
-            total_der = round(sum(i['derecho'] for i in grupo), 2)
-            sufijo = f'.{g_idx}' if len(grupos) > 1 else ''
-            grupos_info.append({'idx': g_idx, 'sufijo': sufijo, 'items': grupo, 'total_der': total_der, 'genera': len(grupo) > 0 and total_der >= 50})
+        for tipo, lista in (('NUEVO', validos_nuevos), ('REAC', validos_reac)):
+            if tipo == 'REAC' and not lista: continue
+            if tipo == 'NUEVO' and not lista and validos_reac: continue  # factura con solo reacondicionados
+            grupos = [lista[i:i+30] for i in range(0, max(len(lista), 1), 30)]
+            for g_idx, grupo in enumerate(grupos, 1):
+                total_der = round(sum(i['derecho'] for i in grupo), 2)
+                sufijo = f'.{g_idx}' if len(grupos) > 1 else ''
+                base = f"{inv}_REACONDICIONADOS" if tipo == 'REAC' else inv
+                grupos_info.append({'idx': g_idx, 'n_partes': len(grupos), 'tipo': tipo, 'sufijo': sufijo,
+                                    'etiqueta': f"{base}{sufijo}", 'items': grupo, 'total_der': total_der,
+                                    'genera': len(grupo) > 0 and total_der >= 50})
 
         preview[inv] = {'items_proc': items_proc, 'excluidos': excluidos, 'grupos': grupos_info}
 
@@ -711,8 +721,7 @@ with col_main:
 
 with col_config:
     st.markdown('<p class="seccion-titulo">⚙️ Configuración</p>', unsafe_allow_html=True)
-    cond_merca = st.selectbox("Condición de Mercadería", ["NUEVA", "USADA"])
-    caum = st.selectbox("¿Posee CAUM?", ["Si", "No"]) if cond_merca == "USADA" else None
+    st.caption("La condición de la mercadería sale de cada ítem de la DI: si paga derechos por el concepto 056 o 057 se arma como Reacondicionado (CAUM Si), en un template aparte.")
     st.markdown("<br>", unsafe_allow_html=True)
     archivos_din = [f_madre, f_despacho, f_equipos, f_descripciones]
     nombres_din = [f"FACAERO {nro_ref or ''}", f"DI {nro_ref or ''}", "Equipos", "Descripciones"]
@@ -732,10 +741,10 @@ if not nro_ref:
 if st.button("🔍 ANALIZAR OPERACIÓN", disabled=not todos_cargados, use_container_width=True):
     with st.spinner("Analizando..."):
         try:
-            preview, rs, cuit_val, sin_traduccion = procesar(f_madre, f_despacho, f_equipos, f_descripciones, cond_merca)
+            preview, rs, cuit_val, sin_traduccion = procesar(f_madre, f_despacho, f_equipos, f_descripciones)
             st.session_state.update({
                 'preview': preview, 'rs': rs, 'cuit_val': cuit_val,
-                'cond_merca': cond_merca, 'caum': caum, 'nro_ref': nro_ref,
+                'nro_ref': nro_ref,
                 'analizado': True, 'confirmado': False,
                 'sin_traduccion': sin_traduccion,
                 'traducciones_manuales': {},
@@ -800,15 +809,23 @@ if st.session_state.get('analizado') and 'nro_ref' in st.session_state:
             rows_unid = ''.join([f"<div>⚠️ PN <b>{i['pn']}</b> — unidad '{i.get('unidad_di') or 'vacía'}' sin equivalente en la lista del formato nuevo</div>" for i in sin_unid])
             st.markdown(f'<div class="excluido-box"><div class="excluido-title">⚠️ Unidades a revisar:</div>{rows_unid}</div>', unsafe_allow_html=True)
 
-        usados_di = [i for i in data['items_proc'] if i.get('concepto_der') in ('056', '057')]
-        if usados_di:
-            msg_u = f"{len(usados_di)} ítem(s) pagan derechos por concepto 056/057 (mercadería usada): " + ', '.join(sorted({str(i['pn']) for i in usados_di}))
-            if st.session_state.get('cond_merca') != 'USADA':
-                msg_u += ". La condición de la operación está en NUEVA: revisá si corresponde."
-            st.markdown(f'<div class="excluido-box"><div class="excluido-title">⚠️ Mercadería usada en la DI:</div><div>{msg_u}</div></div>', unsafe_allow_html=True)
+        reac_di = [i for i in data['items_proc'] if i.get('usado')]
+        if reac_di:
+            msg_u = f"{len(reac_di)} ítem(s) pagan derechos por concepto 056/057 y salen como Reacondicionado (CAUM Si), en template aparte: " + ', '.join(sorted({str(i['pn']) for i in reac_di}))
+            st.markdown(f'<div class="excluido-box"><div class="excluido-title">ℹ️ Mercadería reacondicionada en la DI:</div><div>{msg_u}</div></div>', unsafe_allow_html=True)
+        incons = []
+        for i in data['items_proc']:
+            est = str(i.get('estado_di', '')).upper()
+            dice_usado = ('USAD' in est) or ('REACOND' in est)
+            if i.get('usado') and not dice_usado:
+                incons.append(f"<div>⚠️ PN <b>{i['pn']}</b> — paga por concepto {i['concepto_der']} pero el ESTADO de la DI dice '{i.get('estado_di') or 'vacío'}'</div>")
+            elif not i.get('usado') and dice_usado:
+                incons.append(f"<div>⚠️ PN <b>{i['pn']}</b> — el ESTADO de la DI dice '{i.get('estado_di')}' pero no paga por 056/057; se arma como Nuevo</div>")
+        if incons:
+            st.markdown(f'<div class="excluido-box"><div class="excluido-title">⚠️ Condición a revisar (concepto vs ESTADO de la DI):</div>{"".join(incons)}</div>', unsafe_allow_html=True)
 
         for g in grupos:
-            nombre = f"TEMPLATE_{nro}_{inv}{g['sufijo']}.xlsx"
+            nombre = f"TEMPLATE_{nro}_{g['etiqueta']}.xlsx"
             if g['genera']:
                 st.markdown(f'<span class="badge-ok">✅ {nombre} — {len(g["items"])} ítems | Derechos: USD {g["total_der"]}</span>', unsafe_allow_html=True)
             else:
@@ -829,10 +846,8 @@ if st.session_state.get('confirmado') and 'nro_ref' in st.session_state:
     preview = st.session_state['preview']
     rs = st.session_state['rs']
     cuit_val = st.session_state['cuit_val']
-    cond_merca = st.session_state['cond_merca']
     nro = st.session_state['nro_ref']
     traducciones_extra = st.session_state.get('traducciones_manuales', {})
-    caum = st.session_state.get('caum')
 
     # Aplicar todas las traducciones antes de generar
     aplicar_traducciones(preview, traducciones_extra)
@@ -843,8 +858,8 @@ if st.session_state.get('confirmado') and 'nro_ref' in st.session_state:
     for inv, data in preview.items():
         for g in data['grupos']:
             if not g['genera']: continue
-            nombre = f"{inv}{g['sufijo']}"
-            excel_bytes[nombre] = generar_excel_servicios(g['items'], inv, g['idx'], len(data['grupos']), nro, cond_merca, caum, rs)
+            nombre = g['etiqueta']
+            excel_bytes[nombre] = generar_excel_servicios(g['items'], inv, g['idx'], g['n_partes'], nro, rs, reac=(g['tipo'] == 'REAC'))
             for item in g['items']:
                 if item['estado_match'] == 'descarte':
                     alertas.append(f"<b>{inv}</b> | PN <code>{item['pn']}</code> → ITEM <code>{item['item_di']}</code> asignado por descarte. Verificar.")
@@ -879,9 +894,9 @@ if st.session_state.get('confirmado') and 'nro_ref' in st.session_state:
     for inv, data in preview.items():
         for g in data['grupos']:
             if g['genera']:
-                todas.extend(construir_filas(g['items'], inv, rs, cuit_val, cond_merca,
-                                             observ=texto_parte(inv, g['idx'], len(data['grupos']))))
-        todas.extend(construir_filas_excluidos(data['excluidos'], inv, rs, cuit_val, cond_merca))
+                todas.extend(construir_filas(g['items'], inv, rs, cuit_val,
+                                             observ=texto_parte(inv, g['idx'], g['n_partes'], g['tipo'] == 'REAC')))
+        todas.extend(construir_filas_excluidos(data['excluidos'], inv, rs, cuit_val))
     if todas:
         st.download_button(label=f"📊 DESCARGAR TEMPLATE UNIFICADO — Operación {nro}",
             data=generar_excel_bytes(todas),
